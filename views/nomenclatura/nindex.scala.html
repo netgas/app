@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/dhtmlx/dhtmlx.css")"/>
+        <script src="@routes.Assets.at("javascripts/dhtmlx/dhtmlx.js")"></script>
+
+
+        <style>
+        html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+        background-color: #ebebeb;
+        overflow: hidden;
+        }
+        </style>
+
+        <script>
+        	var main_layout, dhxWin, tabbar, tgrid, sgrid, w1, w2, main;
+
+        	function doOnLoad() {
+        		dhtmlx.image_path='@routes.Assets.at("stylesheets/dhtmlx/imgs/")';
+	            main_layout = new dhtmlXLayoutObject(document.body, '2U');
+	            var meniu = main_layout.cells('a');
+	            meniu.setText('Meniu');
+	            meniu.setWidth('200');
+
+	            main = main_layout.cells('b');
+	            main.setText('Nomenclatoare');
+							var toolbar = main.attachToolbar({
+				        icon_path: '@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")',
+				        xml: '@routes.Assets.at("xml/toolbar_nomenclatura.xml")',
+				        onClick: function(id) {
+				          menuAction(id);
+				        }
+				      });
+
+	            //sidebar meniu
+	            var sidebar = meniu.attachSidebar({
+	                template: "text",
+	                items: [
+	                    {
+	                        id: "users_sidebar_link",
+	                        text: "Utilizatori"
+	                    },
+	                    {
+	                        id: "clients_sidebar_link",
+	                        text: "Clienti"
+	                    },
+	                    {
+	                        id: "nomenclatura_sidebar_link",
+	                        text: "Nomenclatura",
+                        	selected: true
+	                    }
+	                ]
+	            });
+	            sidebar.attachEvent('onSelect', function(id, lastId){
+	                var url = '';
+	                switch(id) {
+	                    case 'users_sidebar_link':
+	                        url = '@routes.User.users';
+	                        break;
+	                    case 'clients_sidebar_link':
+	                        url = '@routes.Client.cindex';
+	                        break;
+	                    case 'nomenclatura_sidebar_link':
+	                        url = '@routes.Nomenclatura.index';
+	                        break;
+	                    default:
+	                        break;
+	                }
+	                window.location = url
+	            });
+
+	            tabbar = main.attachTabbar({
+	            	mode: 'top',
+	            	align: 'left',
+	            	tabs: [
+	            		{id: "tab_a", text: "Temperatura", active: true},
+	            		{id: "tab_b", text: "Strada"},
+									{id: "tab_c", text: "Localitate"}
+	            	]
+	            })
+
+	            //temperatura
+	            tgrid = tabbar.cells('tab_a').attachGrid()
+	            tgrid.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/")');
+
+	            tgrid.setHeader(["ID","Data","Valoare"]);
+            	tgrid.setColTypes("ro,ro,ro");
+            	tgrid.setColSorting('int,date,int');
+            	tgrid.setInitWidths('50,*,*');
+
+	            tgrid.init();
+
+	            tgrid.attachFooter(["<div id='grid_1_recinfoArea' style='width:100%;height:100%'></div>","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan"],['height:25px;text-align:left;background:transparent;border-color:white;padding:0px;']);
+	            tgrid.enablePaging(true, 10,  3,'grid_1_recinfoArea');
+	            tgrid.setPagingSkin('toolbar','dhx_skyblue');
+
+	            tgrid.load('@routes.Nomenclatura.listTemperatura', 'json');
+
+	            var t_context_menu = new dhtmlXMenuObject();
+	            t_context_menu.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")');
+	            t_context_menu.addNewChild(t_context_menu.topId,0, "edit_temp", "Editeaza", false, "page_setup.gif");
+            	t_context_menu.addNewChild(t_context_menu.topId,1, "sterg_temp", "Sterge", false, "close.gif");
+            	t_context_menu.renderAsContextMenu();
+           	 	t_context_menu.attachEvent("onClick", contextMenuTemp);
+
+            	tgrid.enableContextMenu(t_context_menu);
+
+	            //create window generator
+            	dhxWin = new dhtmlXWindows();
+	            //cream window temp
+	            w1 = dhxWin.createWindow("w1", 20, 30, 250, 150);
+	            w1.hide();
+	            w1.setText("Temperatura");
+	            w1.center();
+	            //cream window strada
+	            w2 = dhxWin.createWindow("w2", 20, 30, 250, 300);
+	            w2.hide();
+	            w2.setText("Strada");
+	            w2.center();
+
+	            dhxWin.attachEvent("onClose", function(win) { win.hide(); });
+
+	            //strada
+	            sgrid = tabbar.cells('tab_b').attachGrid()
+	            sgrid.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/")');
+
+	            sgrid.setHeader(["ID","Denumire","Nr. Clienti", "Material", "DN", "Lungime", "Regim pres."]);
+            	sgrid.setColTypes("ro,ro,ro,ro,ro,ro,ro");
+            	sgrid.setColSorting('int,str,int,str,int,int,str');
+            	sgrid.setInitWidths('50,*,*,*,*,*,*');
+
+	            sgrid.init();
+
+	            sgrid.attachFooter(["<div id='grid_2_recinfoArea' style='width:100%;height:100%'></div>","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan"],['height:25px;text-align:left;background:transparent;border-color:white;padding:0px;']);
+	            sgrid.enablePaging(true, 10,  3,'grid_2_recinfoArea');
+	            sgrid.setPagingSkin('toolbar','dhx_skyblue');
+
+	            sgrid.load('@routes.Nomenclatura.listStrada', 'json');
+
+	            var s_context_menu = new dhtmlXMenuObject();
+	            s_context_menu.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")');
+	            s_context_menu.addNewChild(s_context_menu.topId,0, "edit_strada", "Editeaza", false, "page_setup.gif");
+            	s_context_menu.addNewChild(s_context_menu.topId,1, "sterg_strada", "Sterge", false, "close.gif");
+            	s_context_menu.renderAsContextMenu();
+           	 	s_context_menu.attachEvent("onClick", contextMenuStrada);
+
+            	sgrid.enableContextMenu(s_context_menu);
+
+							//localitate
+							lgrid = tabbar.cells('tab_c').attachGrid()
+							lgrid.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/")');
+							lgrid.setHeader(["ID", "Denumire"]);
+							lgrid.setColTypes("ro,ro");
+							lgrid.setColSorting("int,str");
+							lgrid.setInitWidths('50,*');
+
+	            lgrid.init();
+
+	            lgrid.attachFooter(["<div id='grid_3_recinfoArea' style='width:100%;height:100%'></div>","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan"],['height:25px;text-align:left;background:transparent;border-color:white;padding:0px;']);
+	            lgrid.enablePaging(true, 10,  3,'grid_3_recinfoArea');
+	            lgrid.setPagingSkin('toolbar','dhx_skyblue');
+
+							lgrid.load('@routes.Nomenclatura.listLocalitate', 'json');
+
+							var l_context_menu = new dhtmlXMenuObject();
+							l_context_menu.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")');
+							l_context_menu.addNewChild(l_context_menu.topId, 0, "edit_localitate", "Editeaza", false, "page_setup.gif");
+							l_context_menu.addNewChild(l_context_menu.topId, 1, "sterg_localitate", "Sterge", false, "close.gif");
+							l_context_menu.renderAsContextMenu();
+							l_context_menu.attachEvent("onClick", contextMenuLocalitate);
+							lgrid.enableContextMenu(l_context_menu);
+
+							//window localitate
+							w3 = dhxWin.createWindow("w3", 20, 30, 250, 125);
+							w3.hide();
+							w3.setText("Localitate");
+							w3.center();
+
+	            main.showHeader();
+        	}
+
+        	function menuAction(id) {
+        		if(id == "add_temp") {
+        			tabbar.tabs("tab_a").setActive();
+        			var form = w1.attachForm();
+        			form.loadStruct("@routes.Nomenclatura.editTemperatura?id=0");
+
+        			form.attachEvent("onButtonClick", function(id) {
+		                form.send("@routes.Nomenclatura.saveTemperatura", "post", function(loader, response) {
+		                    var result = JSON.parse(response)
+		                    dhtmlx.message({
+		                        text: result.mess
+		                    })
+		                    if(result.res == "OK") {
+		                    	tgrid.clearAndLoad('@routes.Nomenclatura.listTemperatura', 'json')
+		                        w1.hide();
+		                    }
+		                });
+		            });
+
+        			w1.setText("Adauga temperatura noua!");
+              w1.show();
+        		} else if(id == "add_strada") {
+        			tabbar.tabs("tab_b").setActive();
+        			var form = w2.attachForm();
+        			form.loadStruct("@routes.Nomenclatura.editStrada?id=0");
+
+        			form.attachEvent("onButtonClick", function(id) {
+		                form.send("@routes.Nomenclatura.saveStrada", "post", function(loader, response) {
+		                    var result = JSON.parse(response);
+		                    dhtmlx.message({
+		                        text: result.mess
+		                    });
+		                    if(result.res == "OK") {
+		                    	sgrid.clearAndLoad('@routes.Nomenclatura.listStrada', 'json')
+		                        w2.hide();
+		                    }
+		                });
+		            });
+
+        			w2.setText("Adauga strada noua!");
+              w2.show();
+        		} else if(id == "add_localitate") {
+							tabbar.tabs("tab_c").setActive();
+
+							var form = w3.attachForm();
+							form.loadStruct("@routes.Nomenclatura.editLocalitate?id=0");
+							form.attachEvent("onButtonClick", function(id) {
+								form.send("@routes.Nomenclatura.saveLocalitate", "post", function(loade, response) {
+									var result = JSON.parse(response);
+									dhtmlx.message({text: result.mess});
+									if(result.res == "OK") {
+										lgrid.clearAndLoad("@routes.Nomenclatura.listLocalitate", "json");
+										w3.hide();
+									}
+								});
+							});
+
+							w3.setText("Adauga localitate noua!");
+							w3.show();
+						}
+        	}
+
+	        function doOnUnload() {
+	            if (dhxWin != null && dhxWin.unload != null) {
+	                dhxWin.unload();
+	                dhxWin = w1 = null;
+	            }
+	        }
+
+	        function contextMenuTemp(id,zoneId,cas) {
+	        	var data = tgrid.contextID.split("_"); //rowId_colInd
+            	var id_temp = data[0];
+            	if(id == "edit_temp") {
+            		var form = w1.attachForm();
+        			form.loadStruct("@routes.Nomenclatura.editTemperatura?id=" + id_temp);
+        			form.attachEvent("onButtonClick", function(id) {
+		                form.send("@routes.Nomenclatura.saveTemperatura", "post", function(loader, response) {
+		                    var result = JSON.parse(response)
+		                    dhtmlx.message({
+		                        text: result.mess
+		                    })
+		                    if(result.res == "OK") {
+		                    	tgrid.clearAndLoad('@routes.Nomenclatura.listTemperatura', 'json')
+		                        w1.hide()
+		                    }
+		                });
+		            });
+
+            		w1.setText("Editeaza temperatura!");
+            		w1.show();
+            	} else if(id == "sterg_temp") {
+            		dhtmlx.confirm({
+                        title: "Sterge linia",
+                        type: "confirm",
+                        text: "Sunteti sigur ca doriti sa stergeti inregistrarea curenta?",
+                        callback: function(){
+                            window.dhx4.ajax.get("@routes.Nomenclatura.deleteTemperatura?id=" + id_temp, function(r) {
+                                var response = r.xmlDoc.responseText
+                                tgrid.clearAndLoad('@routes.Nomenclatura.listTemperatura', 'json');
+                                dhtmlx.message({
+                                    text: response
+                                });
+                            });
+                        }
+                    });
+            	}
+	        }
+
+	        function contextMenuStrada(id,zoneId,cas) {
+	        	var data = sgrid.contextID.split("_"); //rowId_colInd
+            	var id_strada = data[0];
+            	if(id == "edit_strada") {
+            		var form = w2.attachForm();
+        			form.loadStruct("@routes.Nomenclatura.editStrada?id=" + id_strada);
+        			form.attachEvent("onButtonClick", function(id) {
+		                form.send("@routes.Nomenclatura.saveStrada", "post", function(loader, response) {
+		                    var result = JSON.parse(response)
+		                    dhtmlx.message({
+		                        text: result.mess
+		                    })
+		                    if(result.res == "OK") {
+		                    	sgrid.clearAndLoad('@routes.Nomenclatura.listStrada', 'json')
+		                        w2.hide()
+		                    }
+		                });
+		            });
+
+            		w2.setText("Editeaza strada!");
+            		w2.show();
+            	} else if(id == "sterg_strada") {
+            		dhtmlx.confirm({
+                        title: "Sterge linia",
+                        type: "confirm",
+                        text: "Sunteti sigur ca doriti sa stergeti inregistrarea curenta?",
+                        callback: function(){
+                            window.dhx4.ajax.get("@routes.Nomenclatura.deleteStrada?id=" + id_strada, function(r) {
+                                var response = r.xmlDoc.responseText
+                                sgrid.clearAndLoad('@routes.Nomenclatura.listStrada', 'json');
+                                dhtmlx.message({
+                                    text: response
+                                });
+                            });
+                        }
+                    });
+            	}
+	        }
+
+					function contextMenuLocalitate(id, zoneId, cas) {
+						var data = lgrid.contextID.split("_");
+						var id_localitate = data[0];
+						if(id == "edit_localitate") {
+							var form = w3.attachForm();
+							form.loadStruct("@routes.Nomenclatura.editLocalitate?id=" + id_localitate);
+							form.attachEvent("onButtonClick", function(id) {
+								form.send("@routes.Nomenclatura.saveLocalitate", "post", function(loader, response) {
+									var result = JSON.parse(response);
+									dhtmlx.message({text: result.mess});
+									if(result.res == "OK") {
+										lgrid.clearAndLoad("@routes.Nomenclatura.listLocalitate", "json");
+										w3.hide();
+									}
+								});
+							});
+
+							w3.setText("Editeaza localitate!");
+							w3.show();
+						} else if(id == "sterg_localitate") {
+							dhtmlx.confirm({
+								title: "Sterge linia",
+								type: "confirm",
+								text: "Sunteti sigur ca doriti sa stergeti inregistrarea curenta?",
+								callback: function() {
+									window.dhx4.ajax.get("@routes.Nomenclatura.deleteLocalitate?id=" + id_localitate, function(r) {
+										var response = r.xmlDoc.responseText
+										lgrid.clearAndLoad("@routes.Nomenclatura.listLocalitate", "json");
+										dhtmlx.message({text: response});
+									});
+								}
+							});
+						}
+					}
+
+					//valideaza temperatura intre -100 si +100 (TODO implementata ca regex direct in controller in declararea formularului)
+					function validTemp(data) {
+						if(data == 0){
+							 return true;
+						}
+						return (data > -100 && data < 100)
+					}
+
+					//valideaza un numar intre -10000 si 10000
+					function validateZeciMii(data) {
+						if(data == 0) {
+							return true;
+						}
+						return (data > -10000 && data < 10000)
+					}
+
+        </script>
+
+	</head>
+
+	<body onload="doOnLoad();" onunload="doOnUnload();">
+	</body>
+</html>

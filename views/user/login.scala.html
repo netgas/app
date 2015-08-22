@@ -1,0 +1,79 @@
+@(formular: play.api.data.Form[(String, String)])(implicit flash: play.api.mvc.Flash)
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Logare</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/dhtmlx/dhtmlx.css")"/>
+        <script src="@routes.Assets.at("javascripts/dhtmlx/dhtmlx.js")"></script>
+
+        <style>
+        html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+        background-color: transparent;
+        overflow: hidden;
+        }
+        #form-container {
+            width: 400px;
+            margin: 0 auto;
+            margin-top: 100px;
+            float: none;
+        }
+        </style>
+
+        <script>
+        	var noteName = "";
+        	@if(formular.error("name")){
+        		var noteName = @formular.error("name").get.message; 
+        	}
+
+        	var formData = [
+        		{type: "settings", position: "label-left", labelWidth: 75, inputWidth: 100},
+        		{type: "fieldset", name: "data", inputWidth: "auto", label: "Formular logare", list: [
+        			{type: "input", label: "Username", name: "name", value: "@formular("name").value", note: {text: noteName}, validate: "NotEmpty", required: true},
+        			{type: "password", label: "Parola", name: "password", value: "@formular("password").value", validate: "NotEmpty", required: true},
+        			{type: "button", id: "loginBtn", value: "Logare"}]
+        		}
+        	]
+
+        	function doOnLoad() {
+	            dhtmlx.image_path='@routes.Assets.at("stylesheets/dhtmlx/imgs/")';
+
+	            var myForm = new dhtmlXForm("form-container", formData);
+
+	            myForm.attachEvent("onButtonClick", function(id) {
+	            	if(myForm.validate())
+            			document.forms[0].submit();
+	            })
+
+                @flash.get("success").map { message =>
+                    dhtmlx.alert({
+                        title: "Alert",
+                        type: "alert-error",
+                        text: "@message"
+                    })
+                }
+
+                @formular.globalError.map { error =>
+                    dhtmlx.alert({
+                        title: "Eroare logare",
+                        type: "alert",
+                        text: "@error.message"
+                    })
+                }
+        	}
+        </script>
+
+	</head>
+	<body onload="doOnLoad();">
+		<form id="formular" method="post" action="@routes.User.authentificate">
+			<div id="form-container">
+			</div>
+		</form>
+	</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Utilizatori</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+	<link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/dhtmlx/dhtmlx.css")"/>
+	<script src="@routes.Assets.at("javascripts/dhtmlx/dhtmlx.js")"></script>
+
+	<style>
+	html, body {
+		width: 100%;
+		height: 100%;
+		margin: 0px;
+		padding: 0px;
+		background-color: #ebebeb;
+		overflow: hidden;
+	}
+	</style>
+
+	<script>
+	var myLayout, dhxWin, ugrid, w1;
+	function doOnLoad() {
+		dhtmlx.image_path='@routes.Assets.at("stylesheets/dhtmlx/imgs/")';
+		var main_layout = new dhtmlXLayoutObject(document.body, '2U');
+		var meniu = main_layout.cells('a');
+		meniu.setText('Meniu');
+		meniu.setWidth('200');
+
+		var main = main_layout.cells('b');
+		main.setText('Utilizatori');
+		var toolbar = main.attachToolbar();
+		toolbar.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")');
+		toolbar.loadStruct('@routes.Assets.at("xml/toolbar_users.xml")');
+
+		//sidebar meniu
+		var sidebar = meniu.attachSidebar({
+			template: "text",
+			items: [
+				{
+					id: "users_sidebar_link",
+					text: "Utilizatori",
+					selected: true
+				},
+				{
+					id: "clients_sidebar_link",
+					text: "Clienti"
+				},
+				{
+					id: "nomenclatura_sidebar_link",
+					text: "Nomenclatura"
+				}
+			]
+		});
+		sidebar.attachEvent('onSelect', function(id, lastId){
+			var url = '';
+			switch(id) {
+				case 'users_sidebar_link':
+				url = '@routes.User.users';
+				break;
+				case 'clients_sidebar_link':
+				url = '@routes.Client.cindex';
+				break;
+				case 'nomenclatura_sidebar_link':
+				url = '@routes.Nomenclatura.index';
+				break;
+				default:
+				break;
+			}
+			window.location = url
+		})
+
+		//add event on main menu
+		toolbar.attachEvent("onClick", addUser);
+
+		//context menu
+		myMenu = new dhtmlXMenuObject();
+		myMenu.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")');
+
+		myMenu.addNewChild(myMenu.topId,0, "edit", "Editeaza", false, "page_setup.gif");
+		myMenu.addNewChild(myMenu.topId,1, "sterg", "Sterge", false, "close.gif");
+
+		myMenu.renderAsContextMenu();
+		myMenu.attachEvent("onClick",onButtonClick);
+
+		//create window generator
+		dhxWin = new dhtmlXWindows();
+
+		//create new window
+		w1 = dhxWin.createWindow("w1", 20, 30, 320, 375);
+		w1.hide();
+
+		w1.setText("Editare date");
+		w1.center();
+
+		ugrid = main.attachGrid();
+		ugrid.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/")');
+
+		ugrid.setHeader(["ID","Username","Rol"]);
+		ugrid.setColTypes("ro,ro,ro");
+		ugrid.setColSorting('int,str,str');
+		ugrid.setInitWidths('50,*,*');
+
+		ugrid.enableContextMenu(myMenu);
+
+		ugrid.init();
+
+		ugrid.attachFooter(["<div id='grid_1_recinfoArea' style='width:100%;height:100%'></div>","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan"],['height:25px;text-align:left;background:transparent;border-color:white;padding:0px;']);
+		ugrid.enablePaging(true, 10,  3,'grid_1_recinfoArea');
+		ugrid.setPagingSkin('toolbar','dhx_skyblue');
+
+		ugrid.load('@routes.User.listAllGrid', 'json');
+
+		//on close window, refresh grid
+		dhxWin.attachEvent("onClose", function(w1){
+			ugrid.load('@routes.User.listAllGrid', 'json');
+			w1.hide();
+		});
+
+	}
+
+	function doOnUnload() {
+		if (dhxWin != null && dhxWin.unload != null) {
+			dhxWin.unload();
+			dhxWin = w1 = null;
+		}
+	}
+
+	function onButtonClick(menuitemId,type) {
+		var data = ugrid.contextID.split("_"); //rowId_colInd
+		var userid = data[0];
+
+		if(menuitemId=="edit"){
+			w1.show();
+		}
+
+		form = w1.attachForm();
+		form.loadStruct("@routes.User.edit?id=" + userid);
+
+		if(menuitemId=="sterg"){
+			dhtmlx.confirm({
+				title: "Sterge linia",
+				type: "confirm",
+				text: "Sunteti sigur ca doriti sa stergeti inregistrarea curenta?",
+				callback: function(){
+					window.dhx4.ajax.get("@routes.User.delete?id="+userid, function(r) {
+						var response = r.xmlDoc.responseText;
+						ugrid.clearAndLoad('@routes.User.listAllGrid', 'json');
+						dhtmlx.message({
+							text: response
+						});
+					});
+				}
+			});
+		}
+
+		//save form data
+		form.attachEvent("onButtonClick",function(id){
+			form.send("@routes.User.save", "post", function(loader, response){
+				ugrid.clearAndLoad('@routes.User.listAllGrid', 'json');
+				dhtmlx.message({
+					text: response
+				})
+
+			});
+		});
+	}
+
+	function addUser(menuitemId,type) {
+		if(menuitemId=="add_user"){
+
+			form = w1.attachForm();
+			form.loadStruct("@routes.User.edit?id=0");
+
+			//save form data
+			form.attachEvent("onButtonClick",function(id){
+
+				form.send("@routes.User.save", "post", function(loader, response){
+					dhtmlx.message({
+						text: response
+					})
+
+				});
+			});
+
+			w1.setText("Adauga utilizator nou!");
+			w1.show();
+		}
+	}
+	</script>
+</head>
+<body onload="doOnLoad();" onunload="doOnUnload();">
+
+</body>
+</html>

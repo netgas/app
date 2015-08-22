@@ -1,0 +1,4071 @@
+@(message: String)
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="/assets/javascripts/jquery.min.js"></script>
+<script src="/assets/javascripts/d3.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="/assets/stylesheets/bootstrap.min.css">
+<link rel="stylesheet" href="/assets/stylesheets/bootstrap-xl.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="/assets/stylesheets/bootstrap-theme.min.css">
+
+<!-- Netview CSS -->
+<link rel="stylesheet" href="/assets/stylesheets/netview.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="/assets/javascripts/bootstrap.min.js"></script>
+
+<!-- Bootbox -->
+<script src="/assets/javascripts/bootbox.min.js"></script>
+
+<!-- D3 tip -->
+<script src="/assets/javascripts/d3-tip.js"></script>
+
+<!-- D3 Context Menu -->
+<script src="/assets/javascripts/d3-context-menu.js"></script>
+<link rel="stylesheet" href="/assets/stylesheets/d3-context-menu.css">
+
+<!-- NVD3.js -->
+<link rel="stylesheet" href="/assets/nvd3/nv.d3.css">
+<script src="/assets/nvd3/nv.d3.js"></script>
+
+<!-- Data Tables -->
+<link rel="stylesheet" href="/assets/stylesheets/jquery.dataTables.css">
+<script src="/assets/javascripts/jquery.dataTables.min.js"></script>
+<script src="/assets/javascripts/jquery.stickytableheaders.min.js"></script>
+
+<!-- Main.js -->
+<script src="/assets/javascripts/main.js"></script>
+
+<!-- Datepicker -->
+<link rel="stylesheet" href="/assets/stylesheets/bootstrap-datepicker3.standalone.css">
+<script src="/assets/javascripts/bootstrap-datepicker.min.js"></script>
+
+
+<body>
+
+
+<div class="container" style="padding-top: 60px">
+	<!-- Control Area -->
+	REVERSE SIMULATION
+	<br/>
+	<div class="row">
+        <div class="col-md-12">
+        	<button id="btn_open_scenario" type="button" class="btn btn-primary btn-xs" onclick="open_scenario();">Select Existing Scenario</button>
+        	<button id="btn_set_properties" type="button" class="btn btn-warning btn-xs disabled" onclick="set_properties();">Properties</button>
+        	<button id="btn_save_scenario" type="button" class="btn btn-success btn-xs disabled" onclick="save_scenario();">Save Scenario</button>
+        	<button id="btn_run_scenario" type="button" class="btn btn-primary btn-xs disabled" onclick="run_scenario();"><span class="glyphicon glyphicon-play"></span> Run Scenario</button>
+        	<button id="btn_run_optimization" type="button" class="btn btn-primary btn-xs disabled" onclick="run_optimization();"><span class="glyphicon glyphicon-play"></span> Run Optimization</button>
+        	<button id="btn_save_results" type="button" class="btn btn-success btn-xs disabled" onclick="save_results();">Save Results</button>
+        	<span id="loading"></span>
+        </div>
+	</div>
+	<br/>
+	<div class="row">
+		<div class="col-md-1">
+			SCENARIO:
+		</div>
+		<div class="col-md-2">
+			<span id="scenario_name"></span>
+		</div>
+		<div class="col-md-4">
+			<span id="scenario_dates"></span>
+		</div>
+		<div class="col-md-5">
+		</div>
+	</div>
+
+	<br/>
+	<!--  Tabs  -->
+	<div id="content">
+	    <ul id="tabs" class="nav nav-tabs" data-tabs="tabs">
+	        <li class="active"><a href="#visualization" data-toggle="tab">Visualization</a></li>
+	        <li><a href="#initscenario" data-toggle="tab">Initial Data</a></li>
+	        <li><a href="#scenario" data-toggle="tab">Scenario</a></li>
+	        <li><a href="#nominations" data-toggle="tab">Availability</a></li>
+	        <li><a href="#pipes-tab" data-toggle="tab">Pipes</a></li>
+	        <li><a href="#charts" data-toggle="tab">Charts</a></li>
+	        <li><a href="#charts-pi" data-toggle="tab">Availability vs Nomination</a></li>
+	        <li><a href="#compare" data-toggle="tab">Compare</a></li>
+	        <li><a href="#verify" data-toggle="tab">Verification</a></li>
+	    </ul>
+	    <div id="my-tab-content" class="tab-content">
+	        <div class="tab-pane active" id="visualization">
+	        	<!-- Dropdown -->
+	        	<br/>
+	        	<div class="row scenario_totals">
+	        		<div class="col-md-2">
+	        			
+	        		</div>
+	        		<div class="col-md-4">
+	        		<span id="scenario_hour"></span>
+	        		</div>
+	        		<div class="col-md-3">
+	        			<button type="button" class="btn btn-default btn-xs" onclick="advance_scenario(0, 0);"><span class="glyphicon glyphicon-step-backward"></span></button>
+			        	<button type="button" class="btn btn-default btn-xs" onclick="advance_scenario(1,-1);"><span class="glyphicon glyphicon-chevron-left"></span></button>
+			        	<button type="button" class="btn btn-default btn-xs" onclick="advance_scenario(1, 1);"><span class="glyphicon glyphicon-chevron-right"></span></button>
+			        	<button type="button" class="btn btn-default btn-xs" onclick="advance_scenario(2, 0);"><span class="glyphicon glyphicon-step-forward"></span></button>  	
+	        		</div>
+	        		<div class="col-md-3">
+	        			<select id="set_display_type" name="display_type" class="form-control input-sm" onchange="visualize_scenario(selected_hour);">
+		        				<option value="pressure">Pressure</option>
+		        				<option value="flow">Gas Flow</option>
+		        				<option value="flow_cd">Condy Flow</option>
+		        				<option value="composition">CO2 Composition</option>
+		        		</select>
+	        		</div>
+	        	</div>
+	        	<div class="row">
+			        <div class="col-md-12" style="height: 800px">
+			        <svg xmlns="http://www.w3.org/2000/svg" id="ngrviewer" class="chart">
+			        	<defs>
+				     		<marker id="valve_open" markerWidth="12" markerHeight="8"  markerUnits="userSpaceOnUse"
+						            orient="auto" refX="6" refY="4">
+						      <path d="M0,0 L6,4 0,8" fill="#00ff00"></path>
+						      <path d="M12,0 L6,4 12,8" fill="#00ff00"></path>          
+						    </marker>
+						    <marker id="valve_semi" markerWidth="12" markerHeight="8"  markerUnits="userSpaceOnUse"
+						            orient="auto" refX="6" refY="4">
+						      <path d="M0,0 L6,4 0,8" fill="#888800"></path>
+						      <path d="M12,0 L6,4 12,8" fill="#888800"></path>          
+						    </marker>
+						    <marker id="valve_closed" markerWidth="12" markerHeight="8"  markerUnits="userSpaceOnUse"
+						            orient="auto" refX="6" refY="4">
+						      <path d="M0,0 L6,4 0,8" fill="#ff0000"></path>
+						      <path d="M12,0 L6,4 12,8" fill="#ff0000"></path>          
+						    </marker>
+						    <marker id="valve_black" markerWidth="12" markerHeight="8"  markerUnits="userSpaceOnUse"
+						            orient="auto" refX="6" refY="4">
+						      <path d="M0,0 L6,4 0,8" fill="#000000"></path>
+						      <path d="M12,0 L6,4 12,8" fill="#000000"></path>          
+						    </marker>
+						</defs>
+						<text x="10" y="20" class="txt_label">INPUT GAS FLOW [MMscf/d]:</text><text id="txt_igf" x="280" y="20" class="txt_value">-</text>
+						<text x="10" y="35" class="txt_label">OUTPUT GAS FLOW [MMscf/d]:</text><text id="txt_ogf" x="280" y="35" class="txt_value">-</text>
+						<text x="10" y="50" class="txt_label">LINEPACK GAS [MMscf]:</text><text id="txt_lpg" x="280" y="50" class="txt_value">-</text>
+						<text x="10" y="70" class="txt_label">INPUT CONDY FLOW [BPD]:</text><text id="txt_igc" x="280" y="70" class="txt_value">-</text>
+						<text x="10" y="85" class="txt_label">OUTPUT CONDY FLOW [BPD]:</text><text id="txt_ogc" x="280" y="85" class="txt_value">-</text>
+						<text x="10" y="100" class="txt_label">INVENTORY [Bbls]:</text><text id="txt_lpc" x="280" y="100" class="txt_value">-</text>
+
+						<text x="10" y="120" class="txt_label">ACC. VOLUME at BAGSF [MMscf]:</text><text id="txt_g_73" x="280" y="120" class="txt_value">-</text>
+						<text x="10" y="135" class="txt_label">ACC. VOLUME at GMS1 [MMscf]:</text><text id="txt_g_75" x="280" y="135" class="txt_value">-</text>
+						<text x="10" y="150" class="txt_label">ACC. VOLUME at GMS2 [MMscf]:</text><text id="txt_g_180" x="280" y="150" class="txt_value">-</text>
+						<text x="10" y="165" class="txt_label">ACC. VOLUME at MOD7_8 [MMscf]:</text><text id="txt_g_266" x="280" y="165" class="txt_value">-</text>
+						<text x="10" y="185" class="txt_label">ACC. VOLUME at CondySC_1 [Bbls]:</text><text id="txt_cd_71" x="280" y="185" class="txt_value">-</text>
+						<text x="10" y="200" class="txt_label">ACC. VOLUME at CondySC_2 [Bbls]:</text><text id="txt_cd_177" x="280" y="200" class="txt_value">-</text>
+						<text x="10" y="215" class="txt_label">ACC. VOLUME at CondySC_3 [Bbls]:</text><text id="txt_cd_259" x="280" y="215" class="txt_value">-</text>
+
+						<!-- Legend -->
+						<text x="750" y="35" class="legend" id="legend_um"></text>
+						<rect x="800" y="10" id="legend_color_1" width="50" height="10" style="fill:#1e90ff"></rect><text x="800" y="35" class="legend" id="legend_1"></text>
+						<rect x="850" y="10" id="legend_color_2" width="50" height="10" style="fill:#008000"></rect><text x="850" y="35" class="legend" id="legend_2"></text>
+						<rect x="900" y="10" id="legend_color_3" width="50" height="10" style="fill:#ffd700"></rect><text x="900" y="35" class="legend" id="legend_3"></text>
+						<rect x="950" y="10" id="legend_color_4" width="50" height="10" style="fill:#ff0000"></rect><text x="950" y="35" class="legend" id="legend_4"></text>
+						<text x="1000" y="35" class="legend" id="legend_5"></text>
+						
+			        </svg>
+			        </div>
+				</div>
+
+	            
+	        </div>
+	        <div class="tab-pane" id="initscenario">
+	            <h1>Initial Data</h1>
+	            <button id="adjust_init_button" type="button" class="btn btn-default disabled" onclick="adjust_init_data(0);">Adjust Initial Data</button> 
+	            <div id="initscenario-table"></div>
+	        </div>
+	        <div class="tab-pane" id="scenario">
+	            <h1>Scenario Data</h1><button id="button_set_reverse" type="button" class="btn btn-default" onclick="set_reverse_condition();">Reverse Condition</button>
+	            <div id="scenario-table"></div>
+	        </div>
+	        <div class="tab-pane" id="nominations">
+	            <h1>Availability</h1><button id="apply_nominations_button" type="button" class="btn btn-default" onclick="apply_nominations();">Apply Changes</button>
+	            <button id="load_nominations_button" type="button" class="btn btn-default" onclick="db_load_nominations();">Load Availability</button>
+	            <button id="load_nominations_button" type="button" class="btn btn-default" onclick="db_load_business_rules();">Load Business Rules</button>
+	            <div id="nominations-table"></div>
+	        </div>
+	        <div class="tab-pane" id="pipes-tab">
+	            <h1>Pipes</h1><button id="apply_pipes_settings_button" type="button" class="btn btn-default disabled" onclick="apply_pipes_settings();">Apply Changes</button>
+
+	            <div class="btn-group" role="group" aria-label="...">
+	            	<button id="e11ra_blending1" type="button" class="btn btn-default btn-xs" onclick="edit_blending('E11RA',1);">E11RA Blending</button>
+	            	<button id="e11ra_blending2" type="button" class="btn btn-default btn-xs" onclick="edit_blending('E11RA',2);">E11RA Non-Blending</button>
+	            </div>
+	            <div class="btn-group" role="group" aria-label="...">
+	            	<button id="e11rb_blending1" type="button" class="btn btn-default btn-xs" onclick="edit_blending('E11RB',1);">E11RB Normal</button>
+	            	<button id="e11rb_blending2" type="button" class="btn btn-default btn-xs" onclick="edit_blending('E11RB',2);">E11RB RA-RC Bypass</button>
+	            	<button id="e11rb_blending3" type="button" class="btn btn-default btn-xs" onclick="edit_blending('E11RB',3);">E11RB B11-RC Bypass</button>
+	            </div>
+
+
+	            <div id="pipes-table"></div>
+	        </div>
+	        <div class="tab-pane" id="charts">
+    			
+		        <br/>
+		        <div class="row">
+		        	<div class="col-md-12">
+		        		<div class="row">
+			        		<div class="col-md-4">
+				        	<form class="form-horizontal" role="form">
+							  <div class="form-group">
+							    <label for="set_pipe_name" class="col-sm-2 control-label">Node:</label>
+							    <div class="col-sm-4">
+								    <select id="set_pipe_type" name="pipe_type" class="form-control input-sm" onchange="update_chartpipe_dropdown();">
+								    		<option value="1" selected>Field</option>
+								    		<option value="2">Riser</option>
+								    		<option value="3">Slugcatcher</option>
+								    		<option value="4">GMS</option>
+					    			</select>
+							    </div>
+							    <div class="col-sm-6">
+								    <select id="set_pipe_name" name="pipe_name" class="form-control input-sm">
+					    			</select>
+							    </div>
+							  </div>
+							</form>
+							</div>
+							<div class="col-md-8">
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('Pressure_N1');">Pressure</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('Flow_g');">Gas Flow</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('Flow_cd');">Condy Flow</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('Lpk_g');">Linepack</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('Lpk_cd');">Inventory</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('C2_g');">C2_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('CO2_g');">CO2_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('H2S_g');">H2S_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('C5plus_g');">C5+ g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('N2_g');">N2_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pipe('GHV');">GHV</button>
+							</div>
+			        	</div>
+			        	<div class="row">
+			        		<div id='chart1'>
+			        		  <div id="chart1_title" style="margin-left: 100px"></div>
+							  <svg style='height:500px'> </svg>
+							</div>
+			        	</div>
+			        	
+		        	</div>
+		        </div>
+				
+				<br/>
+		        <div class="row">
+		        	<div class="col-md-12">
+		        		<div class="row">
+			        		<div class="col-md-4">
+				        	<form class="form-horizontal" role="form">
+							  <div class="form-group">
+							    <label for="set_path_name" class="col-sm-2 control-label">Path:</label>
+							    <div class="col-sm-10">
+								    <select id="set_path_name" name="path_name" class="form-control input-sm">
+								    	<option value="M3:GMS2">M3:GMS2</option>
+								    	<option value="B12:GMS3">B12:GMS3</option>
+								    	<option value="JINTAN:E11RC_1">JINTAN:E11RC_1 </option>
+					    			</select>
+							    </div>
+							  </div>
+							</form>
+							</div>
+							<div class="col-md-8">
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('Pressure_N1');">Pressure</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('Flow_g');">Gas Flow</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('Flow_cd');">Condy Flow</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('Lpk_g');">Linepack</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('Lpk_cd');">Inventory</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('C2_g');">C2_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('CO2_g');">CO2_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('H2S_g');">H2S_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('C5plus_g');">C5+ g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('N2_g');">N2_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_path('GHV');">GHV</button>
+							</div>
+			        	</div>
+			        	<!-- Controls -->
+			        	<div class="row path_controls">
+			        		<div class="col-md-4">
+			        		<span id="path_hour"></span>
+			        		</div>
+			        		<div class="col-md-3">
+			        			<button type="button" class="btn btn-default btn-xs" onclick="advance_path_hour(0, 0);"><span class="glyphicon glyphicon-step-backward"></span></button>
+					        	<button type="button" class="btn btn-default btn-xs" onclick="advance_path_hour(1,-1);"><span class="glyphicon glyphicon-chevron-left"></span></button>
+					        	<button type="button" class="btn btn-default btn-xs" onclick="advance_path_hour(1, 1);"><span class="glyphicon glyphicon-chevron-right"></span></button>
+					        	<button type="button" class="btn btn-default btn-xs" onclick="advance_path_hour(2, 0);"><span class="glyphicon glyphicon-step-forward"></span></button>  	
+			        		</div>
+			        	</div>
+			        	<div class="row">
+			        		<div id='chart_path'>
+							  <svg style='height:500px'> </svg>
+							</div>
+			        	</div>
+			        	
+		        	</div>
+		        </div>	
+		        <!-- Accumulated -->
+		        <br/>
+		        <div class="row">
+		        	<div class="col-md-12">
+		        		<div class="row">
+			        		<div class="col-md-4">
+			        		Accumulated
+							</div>
+							<div class="col-md-8">
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_accumulated('73','g');">BAGSF</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_accumulated('75','g');">GMS1</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_accumulated('180','g');">GMS2</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_accumulated('266','g');">MOD7_8</button>
+								
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_accumulated('71','cd');">CondySC_1</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_accumulated('177','cd');">CondySC_2</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_accumulated('259','cd');">CondySC_3</button>
+							</div>
+			        	</div>
+			        	<div class="row">
+			        		<div id='chart_acc'>
+			        		  <div id="chart_acc_title" style="margin-left: 100px"></div>
+							  <svg style='height:500px'> </svg>
+							</div>
+			        	</div>
+			        	
+		        	</div>
+		        </div>
+
+	        </div>
+	        <!-- PI vs Model -->
+	        <div class="tab-pane" id="charts-pi">
+    			
+		        <br/>
+		        <div class="row">
+		        	<div class="col-md-12">
+		        		<div class="row">
+							<div class="col-md-4">
+				        	<form class="form-horizontal" role="form">
+							  <div class="form-group">
+							    <label for="set_pipe_name" class="col-sm-2 control-label">Node:</label>
+							    <div class="col-sm-4">
+								    <select id="set_pi_type" name="pipe_type" class="form-control input-sm" onchange="update_availability_dropdown();">
+								    		<option value="1" selected>Field</option>
+								    		<option value="3">Slugcatcher</option>
+								    		<option value="4">GMS</option>
+					    			</select>
+							    </div>
+							    <div class="col-sm-6">
+								    <select id="set_pi_id" name="pipe_name" class="form-control input-sm">
+					    			</select>
+							    </div>
+							  </div>
+							</form>
+							</div>
+							<div class="col-md-8">
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pi('Pressure_N1');">Pressure</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pi('Flow_g');">Gas Flow</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pi('Flow_cd');">Condy Flow</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pi('CO2_g');">CO2_g</button>
+								<button type="button" class="btn btn-primary btn-xs" onclick="chart_pi('H2S_g');">H2S_g</button>
+							</div>
+			        	</div>
+			        	<div class="row">
+			        		<div id='chart_pi'>
+			        		  <div id="chart_pi_title" style="margin-left: 100px"></div>
+							  <svg style='height:500px'> </svg>
+							</div>
+			        	</div>
+			        	
+		        	</div>
+		        </div>
+		        <br/>
+		        <div class="row">
+		        	<div class="col-md-12">
+		        		<div id="actual_vs_table">
+		        		</div>
+		        	</div>
+		        </div>
+		        <div class="row">
+		        	<div class="col-md-12">
+		        		<div id="actual_vs_table2">
+		        		</div>
+		        	</div>
+		        </div>
+	        </div>
+
+	        <div class="tab-pane" id="compare">
+	            <h1>Compare to: <span id="scenario2_name"></span></h1>
+	            <div class="row">
+			        <div class="col-md-12">
+			        	<button type="button" class="btn btn-primary btn-xs" onclick="open_scenario_2();">Compare to..</button>
+			        </div>
+				</div>
+	            <div id="compare-nodes-table"></div>
+	            <div id="compare-pipes-table"></div>
+	            <br/>
+	            <!-- Controls -->
+	        	<div class="row comp_controls">
+	        		<div class="col-md-4">
+	        		<span id="comp_label"></span>
+	        		</div>
+	        		<div class="col-md-3">
+	        			<button type="button" class="btn btn-default btn-xs" onclick="compare_chart('Flow_g');">Flow</button>
+			        	<button type="button" class="btn btn-default btn-xs" onclick="compare_chart('Flow_cd');">Cond Flow</button>	
+	        		</div>
+	        	</div>
+	            <div class="row">
+	        		<div id='chart_comp'>
+					  <svg style='height:500px'> </svg>
+					</div>
+			    </div>
+	        </div>
+	        <!-- Verification -->
+	        <div class="tab-pane" id="verify">
+	        	<h1>Verification File</h1>
+	            <div class="row">
+			        <div class="col-md-12">
+			        	<button type="button" class="btn btn-primary btn-xs" onclick="load_verification_file();">Display Verification File</button>
+			        </div>
+				</div>
+	            <div id="verification_file"></div>
+
+	        </div>
+	    </div>
+	</div>
+
+	<!-- Modal for Chart -->
+	<div class="modal fade" id="chart_modal">
+	  <div class="modal-dialog">
+	    <div class="modal-content modal-lg">
+	      <div class="modal-header">
+	        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	        <h4 class="modal-title" id="chart_modal_title"></h4>
+	      </div>
+	      <div class="modal-body" id="chart_modal_body" style="height:500px; width: 800px; display:block">
+	        <svg style='height:500px; width: 800px'> </svg>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	      </div>
+	    </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+ 
+ 
+<script type="text/javascript">
+	/*
+    jQuery(document).ready(function ($) {
+        $('#tabs').tab();
+    });
+
+    $(document).on('change', '#new_scenario_name', function(e) {
+    	$('#new_scenario_name').val($(this).val());
+	});
+	$(document).on('change', '#name', function(e) {
+    	$('#name').val($(this).val());
+	});
+	$(document).on('change', '#name2', function(e) {
+    	$('#name2').val($(this).val());
+	});
+*/
+</script> 
+
+	
+
+</div>
+
+
+
+<script>
+
+//role
+var role = 0;
+
+//Constants 
+var UM_PRESSURE = '[bar]';
+var UM_FLOW = '[MMscf/d]';
+
+//Input nodes
+var input_gas_flow = 0;
+var input_cond_flow = 0;
+var output_gas_flow = 0;
+var output_cond_flow = 0;
+var linepack_gas = 0;
+var linepack_cond = 0;
+//Scenario hours
+var scenario_hours = [];
+//Scenario Days 
+var scenario_days = [];
+
+//Network Type 1=DUA, 2=Integration
+var network_type = 1;
+
+//Scenario Paths
+var path = [];
+//path['M3:GMS2']			= [101,106,107,150,157,158,164,169,173,176,178,179,180];
+//path['F13E:GMS1']		= [5,7,8,55,57,58,60,63,64,70,72,74,75];
+//path['Cilipadi:GMS1']	= [1,3,4,51,65,66,70,72,74,75];
+//path['W106:GMS2']		= [120,110,111,112,154,156,159,165,168,174,176,178,179,180];
+//path['JINTAN:MOD78']	= [113,116,117,152,153,251,252,258,260,263,264,265,266];
+path['F23Hub_70 : SC1_79X'] = [51, 78, 65, 66, 70];
+path['E11PB_55_58 : SC1_79X'] = [57, 58, 60, 63, 64, 70];
+path['E11PA_61 : SC1_79X'] =	[59, 60, 63, 64, 70];
+path['F6_52 : SC1_79X'] =	[61, 63, 64, 70];
+path['B11_HL_15 : SC2_25X'] =	[156, 159, 165, 168, 174, 176];
+path['M3_9 : SC2_25X'] =	[150, 157, 158, 164, 169, 173, 176];
+path['M1_5 : SC2_25X'] =	[151, 157, 158, 164, 169, 173, 176];
+path['M1_5 : SC3_119X'] =	[153, 251, 252, 258];
+
+//Path Hour for Path Charts
+var path_hour;
+var path_um;
+
+//Scenario Comparison
+var compare_nodes = ['9:10','14:15','4:5','HELANG:15','22-Kumang:KOTI','70:RA_71','BN_66:RA_67','55:55_58','E8_58:55_58','61:RA_62','52:RA_73','BYRA_78:SC1_79X','BORF:106','Bintulu:106'];
+var compare_pipes = ['5:E11RC_1','E11RB:E11RC_2','SC2_25:GMS3','SC2_25:GMS2'];
+var scenario_filename_2 = '';
+
+//Nominations - Nodes 
+var nomination_nodes = ['M3', 'G7', 'M3S', 'SERAI', 'B12', 'PC4', 'B11', 'HELANG', 'JINTAN', 'SADERI', 'M1', '22-Kumang', 'E11RC', 'GMS3','GMS2'];
+//var nomination_nodes = ['M3:6', 'G7:6', 'M3S:6', 'SERAI:6', 'B12:11', 'PC4:11', 'B11:11', 'HELANG:15', 'JINTAN:1', 'SADERI:1', 'M1:1', '22-Kumang:KOTI'];
+var nomination_data  = {};
+//UCGR
+var ucgr = {1:10.3,2:10.1,5:21,6:21, 9:6.2, 10:6.2, 11:6.2 ,14:10.5,15:7.2,18:10.10,53:0,56:31,67:0,68:0,77:10.10, 101:34.6,102:15.4,
+	103:110, 104:31.5, 105:15.4, 108: 8.4, 109:16, 113: 9.7, 114: 20.3, 115:46.8, 118: 15.1,
+	119:15.1, 120:15.1, 121:15.1, 122:15.1, 155:45.9, 170:18, 201:0, 202:0, 204: 0,
+	205:0, 207:0, 208:0, 253:0, 269:0, 75:0, 73:0, 180:0, 266:0 };
+
+//Nomination Totals [day][id] = {Flow_g: x, Flow_cd: x }
+var nomination_totals = [];
+var nomination_totals_out = [];
+
+//Initialization scenario 
+var init_scenario_filename = '';
+var xdata_init = [];
+var xdata_init_selection = [];
+var adjust_init = 0;
+
+//Scenario name from the database
+var db_scenario_name = '';
+
+//conditions
+var cl_label = [];
+cl_label['']  = '';
+cl_label['0'] = ''; cl_label['2'] = 'Pin';
+cl_label['3'] = 'Qout'; cl_label['5'] = 'Qin';
+cl_label['7'] = 'Pout'; cl_label['22'] = 'PtrC';
+cl_label['33'] = ''; cl_label['55'] = 'QtrC';
+cl_label['56'] = 'Qin';
+
+//Context Menu Definition
+var menu = [
+    {
+        title: '<strong>Info</strong>',
+        action: function(elm, d, i) {
+            console.log(d);
+        }
+    },
+    {
+        title: 'Edit Pressure',
+        action: function(elm, d, i) {
+        	var node_name = d['!Node'].substring(0,d['!Node'].length-3);
+            //console.log('Node Name:' + node_name);
+            //Q
+            var node_pset = sdata[selected_hour][node_name][UM_PRESSURE];
+            //PSET
+            //var node_pset = sdata[selected_hour][node_name + '.PSET']['[bar]'];
+            //Display Edit window
+            bootbox.dialog({
+	                title: "Edit value for " + selected_hour + ' : ' + node_name,
+	                message: '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="name">'+ UM_PRESSURE +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="name" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + node_pset + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>',
+	                buttons: {
+	                    success: {
+	                        label: "Save",
+	                        className: "btn-success",
+	                        callback: function () {
+	                            var new_value = $('#name').val();
+	                            sdata[selected_hour][node_name][UM_PRESSURE] = new_value;
+	                        }
+	                    }
+	                }
+	            }
+	        );
+
+
+        }
+    },
+    {
+        title: 'Edit Qg',
+        action: function(elm, d, i) {
+        	var node_name = d['!Node'].substring(0,d['!Node'].length-3);
+            //console.log('Node Name:' + node_name);
+            //Q
+            var node_q = sdata[selected_hour][node_name][UM_FLOW];
+            //PSET
+            //var node_pset = sdata[selected_hour][node_name + '.PSET']['[bar]'];
+            //Display Edit window
+            bootbox.dialog({
+	                title: "Edit value for " + selected_hour + ' : ' + node_name,
+	                message: '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="name2">'+ UM_FLOW +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="name2" name="nam2e" type="text" placeholder="New value..." class="form-control input-md" value="' + node_q + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>',
+	                buttons: {
+	                    success: {
+	                        label: "Save",
+	                        className: "btn-success",
+	                        callback: function () {
+	                            var new_value = $('#name2').val();
+	                            sdata[selected_hour][node_name][UM_FLOW] = new_value;
+	                        }
+	                    }
+	                }
+	            }
+	        );
+
+
+        }
+    }
+
+];
+
+
+//Context menu for pipes
+var menu_pipes = [
+	{
+        title: '<strong>Pressure</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'Pressure_N1', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>Gas Flow</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'Flow_g', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>Condy Flow</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'Flow_cd', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>Linepack</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'Lpk_g', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>Inventory</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'Lpk_cd', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>C2_g</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'C2_g', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>CO2_g</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'CO2_g', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>H2S_g</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'H2S_g', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>C5+ g</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'C5plus_g', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>N2_g</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'N2_g', '#chart_modal');
+        }
+    },
+    {
+        title: '<strong>GHV</strong> Chart',
+        action: function(elm, d, i) {
+        	var pipe_id = d['id'];
+        	$('#chart_modal').modal('show');
+        	chart_pipe_modal(pipe_id, 'GHV', '#chart_modal');
+        }
+    },
+
+];
+
+
+
+var width = 1150,
+    height = 800,
+    deltax = 150,
+    deltay = 1950,
+    scalefactor = 0.25;
+var xy = {};
+
+var vis_pipes = null;
+var vis_nodes = null;
+var vis_block_valves = null;
+var vis_control_valves = null;
+var scenario_filename = '';
+var scenario_comments = '';
+var start_date ='';
+//If Scenario has output (simulation) data
+var scenario_output = 0;
+//Init Scenario - (0) - Node Pressure
+var xinit_node_pressure = [];
+
+
+//totals
+var totals = [];
+
+//Read File
+var data = {
+	'compressor_stations': [],
+	'control_valves': [],
+	'block_valves': [],
+	'pipe_segments': [],
+	'node_coordinates': []
+};
+
+
+//Entry nodes
+var entry_nodes = [];
+var exit_nodes = [];
+
+entry_nodes['G7'] = true;
+entry_nodes['B11'] = true;
+exit_nodes['GMS2'] = true;
+
+var netdata = [];
+
+var datafile;
+
+
+//Detect browser
+var browser = (function(){
+    var ua= navigator.userAgent, tem,
+    M= ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+    if(/trident/i.test(M[1])){
+        tem=  /\brv[ :]+(\d+)/g.exec(ua) || [];
+        return 'IE '+(tem[1] || '');
+    }
+    if(M[1]=== 'Chrome'){
+        tem= ua.match(/\b(OPR|Edge)\/(\d+)/);
+        if(tem!= null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
+    }
+    M= M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+    if((tem= ua.match(/version\/(\d+)/i))!= null) M.splice(1, 1, tem[1]);
+    return M[0];
+})();
+
+//Load uCGR
+db_load_ucgr();
+
+//Load Network
+d3.tsv("/network2", function(error, sd) {
+		if(error) alert('error loading network file:' + error);
+		//Default network = 2
+		network_type = 2;
+
+		//Loop Data 
+		sd.forEach(function(d) { 
+			//Build array with Node Coordinates
+			if(d.Type<9) {
+				xy[d.Node1] = { x: d['xi'], y: d['yi']};
+				xy[d.Node2] = { x: d['xo'], y: d['yo']};
+			}
+
+			//Pipe
+			if(d.Type==1) {
+				var to_add = 1;
+				if(network_type==2) {
+						if(d.Node1=='E11RA_74' && d.Node2=='E11RB_1') to_add = 0;
+						if(d.Node1=='5' && d.Node2=='E11RC_1') to_add = 0;
+						if(d.Node1=='SC2_25' && d.Node2=='GMS3') to_add = 0;
+						if(d.Node1=='SC1_79X' && d.Node2=='SC2_25X_1') to_add = 0;
+						if(d.Node1=='E11RB' && d.Node2=='E11RC_2') to_add = 0;
+						if(to_add==0) console.log(d.Node1 + ':' + d.Node2);
+				}
+				if(to_add==1) data['pipe_segments'].push({'Node1': d.Node1, 'Node2': d.Node2, 'id':d.Object_id });
+			}
+
+			//Compressor Stations  
+			if(d.Type==2) {
+				data['compressor_stations'].push({'Node1': d.Node1, 'Node2': d.Node2, 'id':d.Object_id });
+			}
+
+			//Control Valves  
+			if(d.Type==3) {
+				data['control_valves'].push({'Node1': d.Node1, 'Node2': d.Node2, 'id':d.Object_id });
+			}
+
+			//netdata
+			netdata[d.Object_id] = d;
+
+		});
+
+		//Build data['node_coordinates'];
+		Object.keys(xy).forEach(function(i){
+			data['node_coordinates'].push({'!Node': i + '.XY', 'X': xy[i]['x'], 'Y': xy[i]['y'] });
+		});
+
+		
+		if(network_type==2) {
+			//Different data for compare tab 
+			compare_nodes = ['9:10','14:15','4:5','HELANG:15','22-Kumang:KOTI','70:RA_71','BN_66:RA_67','55:55_58','E8_58:55_58','61:RA_62','52:RA_73','BYRA_78:SC1_79X','BORF:106','Bintulu:106'];
+			compare_pipes = ['SC1_79:CD_1','SC2_25:CD_2','120:MOD78','SC3_119:CD_3','GMS1i:GMS1','SC1:BAGSF','GMS2i:GMS2','116:GMS9'];
+			//input_nodes = ['F13E','F13W','E8_58','E11SC','F6','E11W','E11','F28','BN_66','Cilipadi','F23','D35_76','BY_77','M3','M4','G7','M3S','SERAI','B12','PC4','B11','HELANG','SADERI','M1','22-Kumang','GOPA','GOPB','SAPA','SEPA','SNPA','MEPA','Bintulu','NC3'];
+			nomination_nodes = ['F13E','F13W','E8_58','E11SC','F6','E11W','E11','F28','BN_66','Cilipadi','F23','D35_76','BY_77','M3','M4','G7','M3S','SERAI','B12','PC4','B11','HELANG','SADERI','M1','22-Kumang','GOPA','GOPB','SAPA','SEPA','SNPA','MEPA','Bintulu'];
+			//output_nodes = ['CD_1','CD_2','CD_3','GMS1','BAGSF','GMS2','MOD78','GMS9'];
+			//Additional Paths
+			//path['F13E:GMS1'] 	= ['F13E:F13_BI','F13_BI:E11PB','E11PB:55','55:55_58','55_58:RA_63','RA_63:RA_62','RA_62:RA_73','RA_73:RA_75','RA_75:SC1_79X','SC1_79X:SC1_79','SC1_79:SC1','SC1:GMS1i','GMS1i:GMS1'];
+			//path['Cilipadi:GMS1'] = ['Cilipadi:F23_Cilipadi','F23_Cilipadi:F23_70','F23_70:70','70:RA_71','RA_71:RA_72','RA_72:SC1_79X','SC1_79X:SC1_79','SC1_79:SC1','SC1:GMS1i','GMS1i:GMS1'];
+			//path['W106:GMS2'] = ['W106:B11','B11:11','11:12','12:14','14:15','15:RB_2','RB_2:RB','RB:RB_4','RB_4:24','24:SC2_25X','SC2_25X:SC2_25','SC2_25:SC2','SC2:GMS2i','GMS2i:GMS2'];
+			//ID 
+			compare_nodes_id = [51,53,55,56,59,61,69,77,150,154,155,152,170,268,269];
+			compare_pipes_id = [71,73,75,177,180,256,259,266];
+		}
+
+		//Replace path select 
+		var path_select ='';
+		Object.keys(path).forEach(function(p){
+			path_select += '<option value="' + p + '">' + p + '</option>';
+		});
+		$('#set_path_name').html(path_select);
+
+		visualize();
+
+	});
+
+
+var chart = d3.select(".chart")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g")
+    .call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom))
+    .append("g");
+
+    chart.append("rect")
+    .attr("class", "overlay")
+    .attr("width", width)
+    .attr("height", height);
+
+	function zoom() {
+	  chart.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+	}
+
+
+function visualize() {
+
+	//Tooltip for nodes
+	var tip = d3.tip()
+	  .attr('class', 'd3-tip')
+	  .offset([-10, 0])
+	  .html(function(d) {
+	  	var html_tip = '';
+	  	var node_name = d['!Node'].substring(0,d['!Node'].length-3);
+	  	var display_type = $('#set_display_type').val();
+	  	html_tip += "<strong>Node:</strong> <span style='color:rgb(255, 215, 0)'>" + node_name + "</span><hr/>";
+	  	if(display_type == 'pressure') {
+	  		if(ndata[selected_hour]!=undefined && ndata[selected_hour][node_name]!= undefined && ndata[selected_hour][node_name]['Pressure_N1']!= undefined) {
+	  			html_tip += 'Pressure: ' + parseFloat(ndata[selected_hour][node_name]['Pressure_N1']).toFixed(2) + ' ' + UM_PRESSURE;
+	  		}
+	  	}
+
+	  	//Flow
+	  	if(display_type == 'flow') {
+	  		if(ndata[selected_hour]!=undefined && ndata[selected_hour][node_name]!= undefined && ndata[selected_hour][node_name]['Flow_g']!= undefined) {
+	  			html_tip += 'Flow: ' + parseFloat(ndata[selected_hour][node_name]['Flow_g']).toFixed(0) + ' ' + UM_FLOW;
+	  		}
+	  	}
+
+	  	if( display_type == 'flow_cd') {
+	  		if(ndata[selected_hour]!=undefined && ndata[selected_hour][node_name]!= undefined && ndata[selected_hour][node_name]['Flow_cd']!= undefined) {
+	  			html_tip += 'Flow: ' + parseFloat(ndata[selected_hour][node_name]['Flow_cd']).toFixed(0) + ' BPD';
+	  		}
+	  	}
+
+	  	//Composition
+	  	if(display_type == 'composition') {
+	  		if(ndata[selected_hour]!=undefined && ndata[selected_hour][node_name]!= undefined && ndata[selected_hour][node_name]['Flow_g']!= undefined) {
+	  			html_tip += '<table>';
+	  			html_tip += '<tr><td>C1_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['C1_g']*100).toFixed(6) + ' mole%'+ '</td></tr>';
+	  			html_tip += '<tr><td>C2_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['C2_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>C3_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['C3_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>iC4_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['iC4_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>nC4_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['nC4_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>iC5_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['iC5_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>nC5_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['nC5_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>C6+_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['C6plus_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>CO2_g:</td><td>' + parseFloat(ndata[selected_hour][node_name]['CO2_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>N2_g:</td><td>' +  parseFloat(ndata[selected_hour][node_name]['N2_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>H2S_g:</td><td>' + ndata[selected_hour][node_name]['H2S_g']*1000000 + ' ppmV'+ '</td></tr>';
+	  			html_tip += '</table><br/>';
+	  		}
+	  	}
+
+	    return html_tip;
+	  });
+
+	//Tooltip for pipes 
+	var tip_pipes = d3.tip()
+	  .attr('class', 'd3-tip')
+	  .offset([-10, 0])
+	  .html(function(d) {
+	  	var html_tip = '';
+	  	var pipe_name = d['Node1'] + ":" + d['Node2'];
+	  	var pipe_id = d['id'];
+	  	var display_type = $('#set_display_type').val();
+	  	html_tip += "<strong>Pipe:</strong> <span style='color:rgb(255, 215, 0)'>" + pipe_name + "</span><hr/>";
+	  	if(scenario && selected_hour && pdata_id[selected_hour]!= undefined && pdata_id[selected_hour][pipe_id]!= undefined) {
+	  		//Pressure
+	  		if(display_type == 'pressure') {
+	  			html_tip += '<table>';
+	  			html_tip += '<tr><td>Pi [bar]:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['Pressure_N1']).toFixed(2) + '</td></tr>';
+	  			html_tip += '<tr><td>Po [bar]:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['Pressure_N2']).toFixed(2) + '</td></tr>';
+	  			html_tip += '</table>';
+	  			return html_tip;
+	  		}
+
+	  		//Flow
+	  		if(display_type == 'flow' || display_type == 'flow_cd') {
+	  			html_tip += '<table>';
+	  			html_tip += '<tr><td>Qgaz [MMscf/d]:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['Flow_g']).toFixed(0) + '</td></tr>';
+	  			html_tip += '<tr><td>Qcond.[bbls/d]:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['Flow_cd']).toFixed(0) + '</td></tr>';
+	  			html_tip += '<tr><td>L_g [MMscf]:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['Lpk_g']).toFixed(0) + '</td></tr>';
+	  			html_tip += '<tr><td>L_cd [bbls]:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['Lpk_cd']).toFixed(0) + '</td></tr>';
+	  			html_tip += '</table>';
+	  			return html_tip;
+	  		}
+
+	  		//composition
+	  		if(display_type == 'composition') {
+	  			html_tip += '<table>';
+	  			html_tip += '<tr><td>C1:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['C1_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>C2:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['C2_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>C3:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['C3_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>iC4:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['iC4_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>nC4:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['nC4_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>iC5:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['iC5_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>nC5:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['nC5_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>C6+:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['C6plus_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>CO2:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['CO2_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>N2:</td><td>' + parseFloat(pdata_id[selected_hour][pipe_id]['N2_g']*100).toFixed(6) + ' mole%'+'</td></tr>';
+	  			html_tip += '<tr><td>H2S:</td><td>' + pdata_id[selected_hour][pipe_id]['H2S_g']*1000000 + ' ppmV'+'</td></tr>';
+	  			html_tip += '</table>';
+	  			return html_tip;
+	  		}
+
+	  		
+	  	};
+
+	    return html_tip;
+	  });
+
+	//Pipe Segments
+	/*
+	vis_pipes = chart.selectAll(".pipe_segments")
+	    .data(data['pipe_segments'])
+	    .enter().append("line")
+	    .classed('pipe_segments',true)
+	    .attr("x1", function(d) { return (xy[d['Node1']].x-deltax)*scalefactor; })
+	    .attr("y1", function(d) { return height-(xy[d['Node1']].y-deltay)*scalefactor; })
+	    .attr("x2", function(d) { return (xy[d['Node2']].x-deltax)*scalefactor; })
+	    .attr("y2", function(d) { return height-(xy[d['Node2']].y-deltay)*scalefactor; });
+	*/
+
+	vis_pipes = chart.selectAll(".pipe_segments")
+		.data(data['pipe_segments'])
+	  .enter().append("polyline")
+	    .classed('pipe_segments',true)
+	    .attr("points", function(d) { 
+	    	var points_string='';
+	    	var x = Math.round((xy[d['Node1']].x-deltax)*scalefactor);
+	    	var y = Math.round(height-(xy[d['Node1']].y-deltay)*scalefactor);
+	    	points_string += x + ',' + y + ' ';
+	    	//1,2,3,4
+	    	if(netdata[d['id']].DrawP1_x) {
+	    		x = Math.round((netdata[d['id']].DrawP1_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP1_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP2_x) {
+	    		x = Math.round((netdata[d['id']].DrawP2_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP2_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP3_x) {
+	    		x = Math.round((netdata[d['id']].DrawP3_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP3_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP4_x) {
+	    		x = Math.round((netdata[d['id']].DrawP4_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP4_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}	 		
+
+	    	x = Math.round((xy[d['Node2']].x-deltax)*scalefactor);
+	    	y = Math.round(height-(xy[d['Node2']].y-deltay)*scalefactor);
+	    	points_string += x + ',' + y;
+	    	//console.log(points_string);
+	    	return points_string; 
+	    });
+
+
+	/*
+	vis_block_valves = chart.selectAll(".block_valves")
+	    .data(data['block_valves'])
+	    .enter().append("polyline")
+	    .classed('block_valves_black',true)
+	    .attr("points",function(d) {
+	    	var x1 = (xy[d['Node1']].x-deltax)*scalefactor;
+	    	var y1 = height-(xy[d['Node1']].y-deltay)*scalefactor;
+	    	var x2 = (xy[d['Node2']].x-deltax)*scalefactor;
+	    	var y2 = height-(xy[d['Node2']].y-deltay)*scalefactor;
+	    	var x12 = (x1 + x2)/2;
+	    	var y12 = (y1 + y2)/2;
+	    	return x1 + ',' + y1 + ' ' + x12 + ',' + y12 + ' ' + x2 + ',' + y2;
+	    });
+	*/
+
+	vis_block_valves = chart.selectAll(".block_valves")
+		.data(data['block_valves'])
+	  .enter().append("polyline")
+	    .classed('block_valves_black',true)
+	    .attr("points", function(d) { 
+	    	var points_string='';
+	    	var x = Math.round((xy[d['Node1']].x-deltax)*scalefactor);
+	    	var y = Math.round(height-(xy[d['Node1']].y-deltay)*scalefactor);
+	    	points_string += x + ',' + y + ' ';
+	    	//1,2,3,4
+	    	if(netdata[d['id']].DrawP1_x) {
+	    		x = Math.round((netdata[d['id']].DrawP1_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP1_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP2_x) {
+	    		x = Math.round((netdata[d['id']].DrawP2_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP2_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP3_x) {
+	    		x = Math.round((netdata[d['id']].DrawP3_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP3_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP4_x) {
+	    		x = Math.round((netdata[d['id']].DrawP4_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP4_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}	 		
+
+	    	x = Math.round((xy[d['Node2']].x-deltax)*scalefactor);
+	    	y = Math.round(height-(xy[d['Node2']].y-deltay)*scalefactor);
+	    	points_string += x + ',' + y;
+	    	console.log(points_string);
+	    	return points_string; 
+	    });
+
+	    //block_valves
+	chart.selectAll(".control_valves")
+	    .data(data['control_valves'])
+	    .enter().append("line")
+	    .classed('control_valves',true)
+	    .attr("x1", function(d) { return (xy[d['Node1']].x-deltax)*scalefactor; })
+	    .attr("y1", function(d) { return height-(xy[d['Node1']].y-deltay)*scalefactor; })
+	    .attr("x2", function(d) { return (xy[d['Node2']].x-deltax)*scalefactor; })
+	    .attr("y2", function(d) { return height-(xy[d['Node2']].y-deltay)*scalefactor; });
+
+	/*
+	chart.selectAll(".compressor_stations")
+	    .data(data['compressor_stations'])
+	    .enter().append("line")
+	    .classed('compressor_stations',true)
+	    .attr("x1", function(d) { return (xy[d['Node1']].x-deltax)*scalefactor; })
+	    .attr("y1", function(d) { return height-(xy[d['Node1']].y-deltay)*scalefactor; })
+	    .attr("x2", function(d) { return (xy[d['Node2']].x-deltax)*scalefactor; })
+	    .attr("y2", function(d) { return height-(xy[d['Node2']].y-deltay)*scalefactor; });
+	*/
+
+	vis_block_valves = chart.selectAll(".compressor_stations")
+		.data(data['compressor_stations'])
+	  .enter().append("polyline")
+	    .classed('compressor_stations_black',true)
+	    .attr("points", function(d) { 
+	    	var points_string='';
+	    	var x = Math.round((xy[d['Node1']].x-deltax)*scalefactor);
+	    	var y = Math.round(height-(xy[d['Node1']].y-deltay)*scalefactor);
+	    	points_string += x + ',' + y + ' ';
+	    	//1,2,3,4
+	    	if(netdata[d['id']].DrawP1_x) {
+	    		x = Math.round((netdata[d['id']].DrawP1_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP1_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP2_x) {
+	    		x = Math.round((netdata[d['id']].DrawP2_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP2_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP3_x) {
+	    		x = Math.round((netdata[d['id']].DrawP3_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP3_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}
+	    	if(netdata[d['id']].DrawP4_x) {
+	    		x = Math.round((netdata[d['id']].DrawP4_x-deltax)*scalefactor);
+	    		y = Math.round(height-(netdata[d['id']].DrawP4_y-deltay)*scalefactor);
+	    		points_string += x + ',' + y + ' ';
+	    	}	 		
+
+	    	x = Math.round((xy[d['Node2']].x-deltax)*scalefactor);
+	    	y = Math.round(height-(xy[d['Node2']].y-deltay)*scalefactor);
+	    	points_string += x + ',' + y;
+	    	//console.log(points_string);
+	    	return points_string; 
+	    });
+
+	//node_coordinates
+	/*
+	chart.selectAll(".node_coordinates")
+	    .data(data['node_coordinates'])
+	    .enter().append("circle")
+	    .classed('node_coordinates',true)
+	    //.attr("cx", function(d) { return (d.X-13700)*10; })
+	    //.attr("cy", function(d) { return (d.Y-10300)*10; })
+	    .attr("r", function(d) { return 3; })
+	    .attr("transform", function(d) { 
+	    	tx = (d.X-13700)*10;
+	    	ty = (d.Y-10300)*10;
+	    	return "translate(" + tx + "," + ty + ")"; 
+		});
+	*/
+
+	vis_nodes = chart.selectAll(".node_coordinates")
+	    .data(data['node_coordinates'])
+	    .enter().append("circle")
+	    .classed('node_coordinates',true)
+	    .attr("cx", function(d) { return (d.X-deltax)*scalefactor; })
+	    .attr("cy", function(d) { return height-(d.Y-deltay)*scalefactor; })
+	    .attr("r", function(d) { return 3; })
+	    .style("fill", function(d) { 
+	    	var node_name = d['!Node'].substring(0,d['!Node'].length-3);
+	    	if( entry_nodes[node_name]!= undefined && entry_nodes[node_name]==true ) return "#800000";
+	    	if( exit_nodes[node_name]!= undefined && exit_nodes[node_name]==true ) return "#808080";
+	    	return "#000000";
+	    });
+	    
+
+	//Node Labels
+	chart.selectAll(".node_labels")
+		.data(data['node_coordinates'])
+	    .enter().append("text")
+	    .classed('node_labels',true)
+	    .attr("x", function(d) { return (d.X-deltax)*scalefactor+5; })
+	    .attr("y", function(d) { return height-(d.Y-deltay)*scalefactor+7; })
+	    .text(function(d){ 
+	    	var node_name = d['!Node'].substring(0,d['!Node'].length-3);
+	 		//console.log(node_name.substring(node_name.length-2,2));
+	 		//console.log(node_name);
+	    	if(node_name.substr(node_name.length-2,2)=='_A' || node_name.substr(node_name.length-2,2)=='_B') return '';
+	    	return node_name; 
+	    });
+
+	//Apply tooltips
+	//Make sure to apply after each change
+	vis_nodes.call(tip)
+	.on('mouseover', tip.show)
+    .on('mouseout', tip.hide);
+
+    //Appply Context Menu
+    vis_nodes.on('contextmenu', d3.contextMenu(menu));
+    vis_pipes.on('contextmenu', d3.contextMenu(menu_pipes));
+
+    //Apply to pipes
+    vis_pipes.call(tip_pipes)
+    .on('mouseover', tip_pipes.show)
+    .on('mouseout', tip_pipes.hide);
+
+
+
+}
+
+//Load Scenario File
+var scenario = 0; 	// 0 = no scenario loaded, 1= scenario loaded
+var selected_hour = '';
+var sdata = [];		//scenario data
+var ndata = [];		//scenario data
+var pdata = [];		//scenario data
+var scdata = [];	//scenario data - All entries
+var pdata_id = []; 
+var scdata_id = [];
+var xdata = []; //All Data
+var accumulated = [];
+
+function load_scenario() {
+	d3.tsv("/load_scenario2/" + scenario_filename, function(error, sd) {
+		if(error) alert('error loading scenario file:' + error);
+		//Clear variables
+		scenario = 0;
+		scenario_output = 0;
+		selected_hour = '';
+		sdata = [];
+		scdata = [];
+		ndata = [];
+		pdata = [];
+		xdata = [];
+		//id
+		pdata_id = [];
+		scdata_id = [];
+		xdata_init_selection = [];
+		xinit_node_pressure  = [];
+		accumulated_g  = [];
+		accumulated_cd = [];
+
+		var stop_loading = 0;
+
+
+		//Load Scenario File
+		sd.forEach(function(d) {
+
+			//If we have a 100 line, we stop the process and display the error
+			if(d.Object_id=="100") {
+				stop_loading = 1;
+				$('#btn_save_scenario').addClass('disabled');
+				alert(d.GHV);
+
+			}
+
+			//d['PN1'] = d.Pressure_N1;
+			//d['PN2'] = d.Pressure_N2;
+			var pn1 = d.Pressure_N1;
+			var pn2 = d.Pressure_N2;
+
+			//Add object to xdata
+			xdata.push(d);
+
+			//TEMP 
+			//if(d.No_pipe=="1" && d.Data_type=="2") console.log( d.Time_h + ' -> ' + d.Node1 + ':' + d.Node2 + ' -- 1: ' + d.Pressure_N1 + '  2: ' + d.Pressure_N2);
+
+			//Build xdata_init_selection
+			if(d.Data_type == "0") {
+				xdata_init_selection.push(d);
+				xinit_node_pressure[d['Node1']] = d['Pressure_N1'];
+			}
+
+
+			//Build sdata 
+			if(d.Data_type == "1") {
+				if( sdata[d.Time_h] == undefined ) sdata[d.Time_h] = {};
+				if( sdata[d.Time_h][d.Node1] == undefined ) sdata[d.Time_h][d.Node1] = {};
+				sdata[d.Time_h][d.Node1]['[MMscf/d]'] = d.Flow_g;
+				sdata[d.Time_h][d.Node1]['[bar]'] = d.Pressure_N1;
+			}
+
+			//Build ndata
+			if(d.Data_type == "2") {
+				if( ndata[d.Time_h] == undefined ) ndata[d.Time_h] = {};
+				if( ndata[d.Time_h][d.Node1] == undefined ) ndata[d.Time_h][d.Node1] = {};
+				ndata[d.Time_h][d.Node1] = d;
+				scenario_output = 1;
+			}
+
+			if(d.Data_type == "2") {
+				//Node2
+				if( ndata[d.Time_h][d.Node2] == undefined ) {
+					ndata[d.Time_h][d.Node2] = {};
+					ndata[d.Time_h][d.Node2] = d;
+					ndata[d.Time_h][d.Node2]['Pressure_N1'] = d['Pressure_N2'];
+				}
+			}
+
+			//Build pdata / pdata_id 
+			if(d.Data_type == "2") {
+				var pipe_name = d.Node1 + ':' + d.Node2;
+				
+				//if(pdata[d.Time_h] == undefined ) pdata[d.Time_h] = {};
+				//if(pdata[d.Time_h][pipe_name] == undefined ) pdata[d.Time_h][pipe_name] = {};
+				//pdata[d.Time_h][pipe_name] = d;
+
+				//ID 
+				var id = d.No_pipe;
+				if(pdata_id[d.Time_h] == undefined ) pdata_id[d.Time_h] = {};
+				if(pdata_id[d.Time_h][id] == undefined ) pdata_id[d.Time_h][id] = {};
+				pdata_id[d.Time_h][id] = d;
+				pdata_id[d.Time_h][id]['Pressure_N1'] = pn1;
+				pdata_id[d.Time_h][id]['Pressure_N2'] = pn2;
+			}
+
+			//Build scdata - Scenario Data 
+			if(d.Data_type == "1") {
+				var pipe_name = d.Node1 + ':' + d.Node2;
+				//if(scdata[d.Time_h] == undefined ) scdata[d.Time_h] = {};
+				//if(scdata[d.Time_h][pipe_name] == undefined ) scdata[d.Time_h][pipe_name] = {};
+				//scdata[d.Time_h][pipe_name] = d;
+				
+				//ID 
+				var id = d.No_pipe;
+				if(scdata_id[d.Time_h] == undefined ) scdata_id[d.Time_h] = {};
+				if(scdata_id[d.Time_h][id] == undefined ) scdata_id[d.Time_h][id] = {};
+				scdata_id[d.Time_h][id] = d;
+
+			}
+
+    	});
+
+		if(stop_loading==1) return(1);
+		//Disable/Enable run button
+		if( Object.keys(pdata_id).length==0 ) {
+			$('#btn_run_scenario').removeClass('disabled');
+			$('#btn_run_optimization').removeClass('disabled');
+		} else {
+			
+			$('#btn_run_scenario').addClass('disabled');
+			$('#btn_run_optimization').addClass('disabled');
+		}
+
+		//Rest of the operations
+		add_nominations_table_v2()
+
+		//Set scenario, update Labels
+		scenario = 1;
+		//If no error (add check), we update the network visualization (colors)
+		scenario_hours = Object.keys(scdata_id);
+		calculate_scenario_hours();
+
+		//Add the Actual vs Optimisation Table
+		add_actual_vs_optimisation_table();
+		
+		//Save start_date
+		start_date = scenario_hours[0].substring(0,10);
+	
+		$('#scenario_name').html(scenario_filename + ' : ' + db_scenario_name + '<a href="/dl_scenario/'+scenario_filename+'" class="btn btn-xs btn-warning">Export to Excel</a>');
+		display_scenario_dates();
+		//Add Pipes Table
+		//Add Pipes Table 
+		add_pipes_table();
+		//Calculate Scenario totals
+		if(scenario_output==1) calculate_scenario_totals();
+		if(scenario_output==1) calculate_accumulated();
+		$('#loading').empty();
+		visualize_scenario( Object.keys(sdata)[0] );
+
+	});
+
+}
+
+//Calculates accumulated volumes
+function calculate_accumulated() {
+	var acctotal_g = {'73':0, '75':0, '180':0, '266': 0};
+	var acctotal_cd = {'71':0, '177':0, '259':0};
+
+	scenario_hours.forEach(function(h){
+		accumulated_g[h] = undefined || {};
+		accumulated_cd[h] = undefined || {};
+		Object.keys(acctotal_g).forEach(function(id){
+			acctotal_g[id] += parseFloat(pdata_id[h][id]['Flow_g'])/24.0;
+			accumulated_g[h][id] = acctotal_g[id];
+		});
+
+		Object.keys(acctotal_cd).forEach(function(id){
+			acctotal_cd[id] += parseFloat(pdata_id[h][id]['Flow_cd'])/24.0;
+			accumulated_cd[h][id] = acctotal_cd[id];
+		});
+	});
+
+}
+
+//Calculates Scenario Hours - Global Array
+function calculate_scenario_hours() {
+	scenario_days = [];
+	scenario_hours.forEach(function(h){
+			var hday = h.substr(0,10);
+			if( scenario_days[hday]==undefined ) {
+				scenario_days[hday] = { };
+				scenario_days[hday]['hours'] = 1;
+
+			} else {
+				scenario_days[hday]['hours'] += 1;
+			}
+		});
+}
+
+function visualize_scenario(hour) {
+		if(scenario==0) alert('No data for this scenario / hour!');
+		if(scenario_output==0) return;
+			selected_hour = hour;
+			$('#scenario_hour').text(format_date(hour));
+
+			//Populate Pipe Dropdown
+			/*
+			$('#set_pipe_name').empty();
+			$.each(Object.keys(pdata_id[hour]), function(key, value) {   
+				var pipe_name = pdata_id[hour][value]['Node1'] + ':' + pdata_id[hour][value]['Node2'];
+			     $('#set_pipe_name')
+			         .append($("<option></option>")
+			         .attr("value",value)
+			         .text(pipe_name)); 
+			});
+			*/
+
+			update_chartpipe_dropdown();
+			update_chartpipe_dropdown2();
+			update_chartpipe_opt_dropdown();
+
+			var display_type = $('#set_display_type').val();
+			//Set Correct Legend 
+			display_legend(display_type);
+
+			//Display totals for that hour
+			$('#txt_igf').text(totals[hour]['input_gas_flow'].toFixed(0));
+			$('#txt_ogf').text(totals[hour]['output_gas_flow'].toFixed(0));
+			$('#txt_igc').text(totals[hour]['input_cond_flow'].toFixed(0));
+			$('#txt_ogc').text(totals[hour]['output_cond_flow'].toFixed(0));
+			$('#txt_lpg').text(totals[hour]['linepack_gas'].toFixed(0));
+			$('#txt_lpc').text(totals[hour]['linepack_cond'].toFixed(0));
+
+			Object.keys(accumulated_g[hour]).forEach(function(id){
+			$('#txt_g_' + id).text(accumulated_g[hour][id].toFixed(0));
+			});
+
+			Object.keys(accumulated_cd[hour]).forEach(function(id){
+			$('#txt_cd_' + id).text(accumulated_cd[hour][id].toFixed(0));
+			});
+
+			vis_pipes.style("stroke", function(d) { 
+				var node_name = d['Node1'] + ':' + d['Node2'];
+				var id = d['id'];
+
+				if(display_type=='pressure' && pdata_id[hour] != undefined && pdata_id[hour][id] != undefined && pdata_id[hour][id]['Pressure_N1'] != undefined) return get_pressure_color(pdata_id[hour][id]['Pressure_N1']);
+				if(display_type=='composition' && pdata_id[hour] != undefined && pdata_id[hour][id] != undefined && pdata_id[hour][id]['CO2_g'] != undefined) return get_composition_color(pdata_id[hour][id]['CO2_g']);
+				if(display_type=='flow' && pdata_id[hour] != undefined && pdata_id[hour][id] != undefined && pdata_id[hour][id]['Flow_g'] != undefined) return get_flow_color(pdata_id[hour][id]['Flow_g']);
+				if(display_type=='flow_cd' && pdata_id[hour] != undefined && pdata_id[hour][id] != undefined && pdata_id[hour][id]['Flow_cd'] != undefined) return get_flowcd_color(pdata_id[hour][id]['Flow_cd']);
+				return "#000000"; 
+			});
+			//Pipe Labels
+
+			//nodes
+			vis_nodes.style("fill", function(d) { 
+				var node_name = d['!Node'].substring(0,d['!Node'].length-3);
+				if( ndata[hour]==undefined ) return "#000000";
+				if( ndata[hour][node_name]==undefined ) return "#000000";
+				if( display_type=='pressure' && ndata[hour][node_name]['Pressure_N1'] != undefined ) return get_pressure_color(ndata[hour][node_name]['Pressure_N1']);
+				if( display_type=='composition' && ndata[hour][node_name]['CO2_g'] != undefined ) return get_composition_color(ndata[hour][node_name]['CO2_g']);
+				if( display_type=='flow' && ndata[hour][node_name]['Flow_g'] != undefined ) return get_flow_color(ndata[hour][node_name]['Flow_g']);
+				if( display_type=='flow_cd' && ndata[hour][node_name]['Flow_g'] != undefined ) return get_flowcd_color(ndata[hour][node_name]['Flow_cd']);
+				return "#000000";
+			});
+
+			vis_block_valves
+			.classed('block_valves_black', false)
+			.classed('block_valves_open', true);
+
+
+}
+
+function get_pressure_color(pressure) {
+	pressure = parseFloat(pressure);
+	if(pressure < 40)  return('#1e90ff');
+	if(pressure < 90)  return('#008000');
+	if(pressure < 100) return('#ffd700');
+	if(pressure > 100) return('#ff0000');
+	return "#eeeeee";
+}
+
+function get_composition_color(comp) {
+	c = parseFloat(comp);
+	if(c < 0.03)   return('#1e90ff');
+	if(c < 0.055)  return('#008000');
+	if(c < 0.065) return('#ffd700');
+	if(c >= 0.065) return('#ff0000');
+	return "#eeeeee";
+}
+
+function get_flow_color(element_value) {
+v = parseFloat(element_value);
+		if(v < 350 ) return('#1e90ff');
+		if(v < 600 ) return('#008000');
+		if(v < 900 ) return('#ffd700');
+		if(v > 900 ) return('#ff0000');
+		return "#eeeeee";
+}
+
+function get_flowcd_color(element_value) {
+v = parseFloat(element_value);
+		if(v < 10000) return('#ADFFAD');
+		if(v < 20000) return('#5CFF5C');
+		if(v < 30000) return('#00A300');
+		if(v < 40000) return('#001400');
+		return "#eeeeee";
+}
+
+function get_element_color(element_value) {
+	var display_type = $('#set_display_type').val();
+	//Pressure (or composition)
+	if(display_type=='pressure') {
+		pressure = parseFloat(element_value);
+		if(pressure < 40)  return('#1e90ff');
+		if(pressure < 90)  return('#008000');
+		if(pressure < 100) return('#ffd700');
+		if(pressure > 100) return('#ff0000');
+		return "#eeeeee";
+	}
+	//Flow_g 
+	if(display_type=='flow') {
+		v = parseFloat(element_value);
+		if(v < 350 ) return('#1e90ff');
+		if(v < 600 ) return('#008000');
+		if(v < 900 ) return('#ffd700');
+		if(v > 900 ) return('#ff0000');
+		return "#eeeeee";
+	}
+	if(display_type=='composition') {
+		c = parseFloat(element_value);
+		if(c < 0.03)   return('#1e90ff');
+		if(c < 0.055)  return('#008000');
+		if(c < 0.065) return('#ffd700');
+		if(c >= 0.065) return('#ff0000');
+		return "#eeeeee";
+	}
+
+}
+
+//Update Scenario on tab selection
+$(document).on( 'shown.bs.tab', 'a[href="#scenario"]', function (e) {
+   //console.log(e.target) // activated tab
+	display_scenario_table();
+
+});
+
+//Update Init Data Table on tab Selection
+$(document).on( 'shown.bs.tab', 'a[href="#initscenario"]', function (e) {
+   //console.log(e.target) // activated tab
+   //Display the table
+   display_initscenario_table();
+});
+
+//Adjust Init Data
+function adjust_init_data(node_id) {
+	Object.keys(xdata_init_selection).forEach(function(i){
+	    		var d = xdata_init_selection[i];
+	    		var id = d['No_pipe'];
+	    		if(node_id==id || node_id==0) {
+	    			var base_pipe_id = netdata[id]['init_node'];
+	    			var base_pipe_node = netdata[base_pipe_id]['Node1'];
+	    			var base_pressure = parseFloat(xinit_node_pressure[ base_pipe_node ]);
+		    		xdata_init_selection[i]['Pressure_N1'] = base_pressure * parseFloat(netdata[id]['Proc_p1']);
+		    		xdata_init_selection[i]['Pressure_N2'] = base_pressure * parseFloat(netdata[id]['Proc_p2']);
+		    		xdata_init_selection[i]['Lpk_g'] = base_pressure * parseFloat(netdata[id]['Proc_lpg']);
+		    		xdata_init_selection[i]['Lpk_cd'] = base_pressure * parseFloat(netdata[id]['Proc_lpcd']);
+	    		}
+	    		
+
+	    	});
+	//Redraw Table
+	display_initscenario_table();
+}
+
+function display_initscenario_table() {
+	$('#initscenario-table').empty();
+
+   var tableHtml = '<table id="initscenario-table-01" class="table table-condensed table-hover"><thead><tr><th>Hour</th><th>Node (From:To)</th><th>Pressure <sub>From</sub> (Barg)</th><th>Pressure <sub>To</sub> (Barg)</th><th>Gas Flow (MMscf/d)</th><th>Condy Flow (Bbls/d)</th><th>Condition Limit</th><th>Actions</th></tr></thead><tfoot><tr><th>Hour</th><th>Node (From:To)</th><th>Pressure <sub>From</sub> (Barg)</th><th>Pressure <sub>To</sub> (Barg)</th><th>Gas Flow (MMscf/d)</th><th>Condy Flow (Bbls/d)</th><th>Condition Limit</th><th>Actions</th></tr></tfoot>';
+
+   Object.keys(xdata_init_selection).forEach(function(i){
+   	var pipe_id = xdata_init_selection[i]['No_pipe'];
+   	var el_id = i + '_' + pipe_id;
+   	var hour = xdata_init_selection[i]['Time_h'];
+   	var el = xdata_init_selection[i]['Node1'] + ':' + xdata_init_selection[i]['Node2'];
+   	 	tableHtml += '<tr><td>' + format_date(hour) + '</td><td>' + el + '</td><td id="in1_'+el_id+'">' + parseFloat(xdata_init_selection[i]['Pressure_N1']).toFixed(2) + '</td><td id="in2_'+el_id+'">' + parseFloat(xdata_init_selection[i]['Pressure_N2']).toFixed(2) + '</td><td id="iflow_'+el_id+'">' + parseFloat(xdata_init_selection[i]['Flow_g']).toFixed(0) + '</td><td id="iflowcd_' + el_id +'">' + parseFloat(xdata_init_selection[i]['Flow_cd']).toFixed(0) + '</td><td id="icond_'+el_id+'">' + cl_label[xdata_init_selection[i]['CondLimit']] + '</td><td><button type="button" class="btn btn-primary btn-xs" onclick="edit_init_parameters(\'' + hour +'\',\'' + pipe_id +'\','+i+');">Edit</button></td></tr>';
+   });
+
+   tableHtml += '</table>';
+   $('#initscenario-table').html(tableHtml);
+   //$('#scenario-table-01').DataTable();
+   $('#initscenario-table-01').DataTable( {
+        initComplete: function () {
+            var api = this.api();
+ 
+            api.columns().indexes().flatten().each( function ( i ) {
+            	//Build dropdown only for the first two columns
+            	if(i<2) {
+	                var column = api.column( i );
+	                var select = $('<select><option value=""></option></select>')
+	                    .appendTo( $(column.footer()).empty() )
+	                    .on( 'change', function () {
+	                        var val = $.fn.dataTable.util.escapeRegex(
+	                            $(this).val()
+	                        );
+	 
+	                        column
+	                            .search( val ? '^'+val+'$' : '', true, false )
+	                            .draw();
+	                    } );
+	 
+	                column.data().unique().sort().each( function ( d, j ) {
+	                    select.append( '<option value="'+d+'">'+d+'</option>' )
+	                } );
+            	}
+            } );
+        }
+    } );
+
+}
+
+//Update Nominations on tab selection
+$(document).on( 'shown.bs.tab', 'a[href="#nominations"]', function (e) {
+	add_nominations_table_v2();
+});
+
+//Open Scenario
+function open_scenario() {
+	$.ajax({url:"/db_list_scenarios_rev",success:function(result){
+		//Bootbox selection
+    	//console.log(result);
+	            bootbox.dialog({
+	            title: "Open Scenario from the server",
+	            message: '<div class="row">' +
+	            		'<div class="col-md-12"> ' +
+	            	'<form role="form">' +
+					  '<div class="form-group">' +
+					    '<label for="start_date">Start Date YYYY/MM/DD :</label>' +
+					    '<input type="text" class="form-control datepicker" id="start_date">' +
+					  ' </div> ' +
+					  '<div class="form-group">' +
+					    '<label for="end_date">End Date YYYY/MM/DD:</label>' +
+					    '<input type="text" class="form-control datepicker" id="end_date">' +
+					  ' </div> ' +
+					  '<div class="form-group">' +
+					    '<label for="description">Description:</label>' +
+					    '<input type="text" class="form-control" id="description">' +
+					  ' </div> ' +
+					  '<div class="checkbox">' +
+					   '<label><input type="checkbox" id="base_plan"> Base Plan</label>' +
+					   '</div>' +
+					  '<a id="filter-scenario-button" class="btn btn-default" onclick="refresh_scenario_list(2);">Filter</a>' +
+					'</form>' + 
+	            	'</div>' +
+	            	'</div><hr/>' +
+	            	'<div class="row">  ' +
+	                '<div class="col-md-12"> ' +
+	                '<form role="form"> ' +
+	                '<div class="form-group"> ' +
+	                '<label class="col-md-2 control-label" for="name">'+ 'Scenario:' +'</label> ' +
+	                '<div id="dd-scenario" class="col-md-12"> ' +
+	                result +
+	                '</div> ' +
+	                '</div> ' +
+	                '</form> </div>  </div>',
+	            buttons: {
+	                success: {
+	                    label: "Open",
+	                    className: "btn-success",
+	                    callback: function () {
+	                    	clean_scenario();
+	                        var scenario_filename_txt = $('#filename option:selected').val() + ".txt";
+	                        scenario_filename = scenario_filename_txt.substring(0,scenario_filename_txt.length-4);
+	                        console.log(scenario_filename);
+	                        //Enable buttons
+	                        $('#btn_set_properties').removeClass('disabled');
+	                        $('#btn_save_scenario').removeClass('disabled');
+	                        //Get Scenario locally
+	                        $('#loading').html('LOADING...');
+	                        $.ajax({
+	                        	type: "GET",
+	                        	url: "/db_load_scenario/" + scenario_filename, 
+	                        	//data: {scenario_filename: new_scenario, scenario_data: serialize_scenario2() },
+	                        	success: function(data) { 
+	                        		//console.log(data);
+	                        		//Set scenario_name   
+	                        		db_scenario_name = data;
+	                        		load_scenario();
+	                        	}
+	                        });
+	                        //load_scenario();
+	                        //Open Scenario - apply it
+
+	                    }
+	                }
+	            }
+	        }
+	    );
+		//End of success function
+		$(".datepicker").datepicker({
+		    format: 'yyyy/mm/dd',
+		    autoclose: true,
+		    todayBtn: "linked",
+    		todayHighlight: true
+		});
+  	}});
+}
+
+
+//Open Second Scenario
+function open_scenario_2() {
+	$.ajax({url:"/db_list_scenarios_rev",success:function(result){
+		//Bootbox selection
+    	//console.log(result);
+	            bootbox.dialog({
+	            title: "Select Scenario for comparison",
+	            message: '<div class="row">  ' +
+	                '<div class="col-md-12"> ' +
+	                '<form class="form-horizontal"> ' +
+	                '<div class="form-group"> ' +
+	                '<label class="col-md-4 control-label" for="name">'+ 'Scenario:' +'</label> ' +
+	                '<div class="col-md-4"> ' +
+	                result +
+	                ' </div> ' +
+	                '</div> ' +
+	                '</form> </div>  </div>',
+	            buttons: {
+	                success: {
+	                    label: "Select",
+	                    className: "btn-success",
+	                    callback: function () {
+	                        var scenario_filename_txt = $('#filename option:selected').val() + '.txt';
+	                        scenario_filename_2 = scenario_filename_txt.substring(0,scenario_filename_txt.length-4);
+	                        console.log(scenario_filename_2);
+	                        $('#loading').html('LOADING...');
+	                        $.ajax({
+	                        	type: "GET",
+	                        	url: "/db_load_scenario/" + scenario_filename_2, 
+	                        	//data: {scenario_filename: new_scenario, scenario_data: serialize_scenario2() },
+	                        	success: function(data) { 
+	                        		//console.log(data);  
+	                        		load_scenario_2();
+	                        		$('#loading').html('');
+	                        	}
+	                        });
+	                        //load_scenario_2();
+	                        //Open Scenario - apply it
+
+	                    }
+	                }
+	            }
+	        }
+	    );
+		//End of success function
+  	}});
+}
+
+//Save Results
+function save_results() {
+	if(scenario_filename=='') {
+			alert('Please open a scenario first!');
+			return;
+		}
+	$('#loading').text('SAVING RESULTS...');
+	$('#btn_save_results').addClass('disabled');
+    $.ajax({
+    	type: "POST",
+    	url: "/db_save_results", 
+    	data: {scenario_filename: scenario_filename, scenario_comments: '', data_start: '', data_stop: '', id_initial_scenario: '',scenario_type: '2',scenario_data: serialize_scenario_results_sql() },
+    	success: function(data) { 
+    		//console.log(data);  
+    		//$('#btn_run_scenario').removeClass('disabled');
+    		console.log('Scenario Results have been saved. Exit code:' + data);
+    		$('#loading').text('');
+    		$('#btn_save_results').removeClass('disabled');
+
+    	}
+    });
+
+}
+
+function serialize_scenario_results_sql() {
+	var scenario_string = '';
+
+	Object.keys(pdata_id).forEach(function(hr){
+		Object.keys(pdata_id[hr]).forEach(function(pipe_id){
+			var d = pdata_id[hr][pipe_id];
+			var new_pressure_node1 = pdata_id[hr][pipe_id]['Pressure_N1'];
+			var new_flow_node1 = pdata_id[hr][pipe_id]['Flow_g'];
+			var new_cond_limit = pdata_id[hr][pipe_id]['CondLimit'];
+			var new_valve = pdata_id[hr][pipe_id]['Valve'];
+
+			var sline = add_field(d.Object_id,',');
+			sline += add_field(d.Data_type,',');
+			sline += add_field(hr,',');
+			sline += add_field(d.No_pipe,',');
+			sline += add_field(new_cond_limit,',');
+			sline += add_field(d.Index_Node1,',');
+			sline += add_field(d.Index_Node2,',');
+			sline += add_field(d.Node1,',');
+			sline += add_field(d.Node2,',');
+			sline += add_field(new_valve,',');
+			sline += add_field(d['Compressor pressure out'],',');
+			sline += add_field(d['Compressor Rate'],',');
+			sline += add_field(d['Rog'],',');
+			sline += add_field(d['Rod'],',');
+			sline += add_field(new_pressure_node1,',');
+			sline += add_field(d['Pressure_N2'],',');
+			sline += add_field(new_flow_node1,',');
+			sline += add_field(d['Flow_cd'],',');
+			sline += add_field(d['Temperature'],',');
+			sline += add_field(d['Lpk_g'],',');
+			sline += add_field(d['Lpk_cd'],',');
+			sline += add_field(d['C1_g'],',');
+			sline += add_field(d['C2_g'],',');
+			sline += add_field(d['C3_g'],',');
+			sline += add_field(d['iC4_g'],',');
+			sline += add_field(d['nC4_g'],',');
+			sline += add_field(d['iC5_g'],',');
+			sline += add_field(d['nC5_g'],',');
+			sline += add_field(d['C6plus_g'],',');
+			sline += add_field(d['CO2_g'],',');
+			sline += add_field(d['N2_g'],',');
+			sline += add_field(d['H2S_g'],',');
+			sline += add_field(d['C1_cd'],',');
+			sline += add_field(d['C2_cd'],',');
+			sline += add_field(d['C3_cd'],',');
+			sline += add_field(d['iC4_cd'],',');
+			sline += add_field(d['nC4_cd'],',');
+			sline += add_field(d['iC5_cd'],',');
+			sline += add_field(d['nC5_cd'],',');
+			sline += add_field(d['C6plus_cd'],',');
+			sline += add_field(d['CO2_cd'],',');
+			sline += add_field(d['N2_cd'],',');
+			sline += add_field(d['H2S_cd'],',');
+			sline += add_field(d['H2O_cd'],',');
+			sline += add_field(d['GHV'],'');
+			sline += '\n';
+			//console.log(sline);
+
+			scenario_string += sline;
+
+		});
+	});
+
+	return scenario_string;
+
+
+
+}
+
+
+
+//Save Scenario
+function save_scenario() {
+		if(scenario_filename=='') {
+			alert('Please open a scenario first!');
+			return;
+		}
+        bootbox.dialog({
+            title: "Save Scenario as.. ",
+            message: '<div class="row">  ' +
+                '<div class="col-md-12"> ' +
+                '<form class="form-horizontal"> ' +
+                '<div class="form-group"> ' +
+                '<label class="col-md-4 control-label" for="new_scenario_name">'+ 'Scenario Name' +'</label> ' +
+                '<div class="col-md-4"> ' +
+                '<input id="new_scenario_name" name="new_scenario_name" type="text" placeholder="Enter Name..." class="form-control input-md" value="' + scenario_comments + '"> ' +
+                '<span class="help-block"></span> </div> ' +
+                '</div> ' +
+                '</form> </div>  </div>',
+            buttons: {
+                success: {
+                    label: "Save",
+                    className: "btn-success",
+                    callback: function () {
+                    	if(xdata_init_selection.length<1) {
+                    		alert('Please set the Init Scenario');
+                    		return;
+                    	}
+                        scenario_comments = $('#new_scenario_name').val();
+                        console.log('Saving scenario as: ' + scenario_comments);
+                        //Process array
+                        //Process Nominations
+                        //Upload string
+                        var data_start = Object.keys(scdata_id)[0];
+                        var data_stop = Object.keys(scdata_id)[Object.keys(scdata_id).length-1];
+                        $('#loading').text('SAVING...');
+                        $.ajax({
+                        	type: "POST",
+                        	url: "/db_save_scenario", 
+                        	data: {scenario_filename: '', scenario_comments: scenario_comments, data_start: data_start, data_stop: data_stop, id_initial_scenario: init_scenario_filename,scenario_type: '2', scenario_data: serialize_scenario_sql() },
+                        	success: function(data) { 
+                        		//console.log(data);  
+                        		$('#btn_run_scenario').removeClass('disabled');
+                        		$('#btn_run_optimization').removeClass('disabled');
+                        		console.log('Scenario has been uploaded');
+                        		$('#loading').text('SAVED AS Scenario #' + data);
+                        		scenario_filename = data;
+                        		$('#scenario_name').html(data);
+                        		//Load Scenario 
+                        		console.log(scenario_filename);
+		                        //Enable buttons
+		                        $('#btn_set_properties').removeClass('disabled');
+		                        $('#btn_save_scenario').removeClass('disabled');
+		                        //Get Scenario locally
+		                        $('#loading').html('LOADING...');
+		                        $.ajax({
+		                        	type: "GET",
+		                        	url: "/db_load_scenario/" + scenario_filename, 
+		                        	//data: {scenario_filename: new_scenario, scenario_data: serialize_scenario2() },
+		                        	success: function(dt) { 
+		                        		//console.log(data);
+		                        		//Set scenario_name   
+		                        		db_scenario_name = dt;
+		                        		load_scenario();
+		                        	}
+		                        });
+
+                        	}
+                        });
+                        
+                    }
+                }
+            }
+        }
+    );
+}
+
+function serialize_scenario() {
+	var scenario_string = '!Comment Line\n';
+   	Object.keys(sdata).forEach(function(hour){
+	   	Object.keys(sdata[hour]).forEach(function(el){
+	   		Object.keys(sdata[hour][el]).forEach(function(uom){
+	   			scenario_string += hour + '\t' + el + '\t' + uom + '\t' + sdata[hour][el][uom] + '\n';
+	   		});
+	   	});
+   	});
+   	return scenario_string;
+}
+
+function serialize_scenario_sql() {
+	var scenario_string = '';
+	Object.keys(xdata_init_selection).forEach(function(e){
+		var d = xdata_init_selection[e];
+		//var sline = '"' + d.Network_id + '",';
+		//sline += '"' + d.Scenario_id + '",';
+		var sline = add_field('2',',');
+		sline += add_field('0',',');
+		sline += add_field(d.Time_h,',');
+		sline += add_field(d.No_pipe,',');
+		sline += add_field(d.CondLimit,',');
+		sline += add_field(d.Index_Node1,',');
+		sline += add_field(d.Index_Node2,',');
+		sline += add_field(d.Node1,',');
+		sline += add_field(d.Node2,',');
+		sline += add_field(d.Valve,',');
+		sline += add_field(d['Compressor pressure out'],',');
+		sline += add_field(d['Compressor Rate'],',');
+		sline += add_field(d['Rog'],',');
+		sline += add_field(d['Rod'],',');
+		sline += add_field(d['Pressure_N1'],',');
+		sline += add_field(d['Pressure_N2'],',');
+		sline += add_field(d['Flow_g'],',');
+		sline += add_field(d['Flow_cd'],',');
+		sline += add_field(d['Temperature'],',');
+		sline += add_field(d['Lpk_g'],',');
+		sline += add_field(d['Lpk_cd'],',');
+		sline += add_field(d['C1_g'],',');
+		sline += add_field(d['C2_g'],',');
+		sline += add_field(d['C3_g'],',');
+		sline += add_field(d['iC4_g'],',');
+		sline += add_field(d['nC4_g'],',');
+		sline += add_field(d['iC5_g'],',');
+		sline += add_field(d['nC5_g'],',');
+		sline += add_field(d['C6plus_g'],',');
+		sline += add_field(d['CO2_g'],',');
+		sline += add_field(d['N2_g'],',');
+		sline += add_field(d['H2S_g'],',');
+		sline += add_field(d['C1_cd'],',');
+		sline += add_field(d['C2_cd'],',');
+		sline += add_field(d['C3_cd'],',');
+		sline += add_field(d['iC4_cd'],',');
+		sline += add_field(d['nC4_cd'],',');
+		sline += add_field(d['iC5_cd'],',');
+		sline += add_field(d['nC5_cd'],',');
+		sline += add_field(d['C6plus_cd'],',');
+		sline += add_field(d['CO2_cd'],',');
+		sline += add_field(d['N2_cd'],',');
+		sline += add_field(d['H2S_cd'],',');
+		sline += add_field(d['H2O_cd'],',');
+		sline += add_field(d['GHV'],'');
+		sline += '\n';
+
+		scenario_string += sline;
+
+	});
+
+	Object.keys(scdata_id).forEach(function(hr){
+		Object.keys(scdata_id[hr]).forEach(function(pipe_name){
+			var d = scdata_id[hr][pipe_name];
+			var new_pressure_node1 = scdata_id[hr][pipe_name]['Pressure_N1'];
+			var new_flow_node1 = scdata_id[hr][pipe_name]['Flow_g'];
+			var new_cond_limit = scdata_id[hr][pipe_name]['CondLimit'];
+			var new_valve = scdata_id[hr][pipe_name]['Valve'];
+
+			//var sline = add_field(d.Object_id,',');
+			var sline = add_field('2',',');
+			sline += add_field(d.Data_type,',');
+			sline += add_field(hr,',');
+			sline += add_field(d.No_pipe,',');
+			sline += add_field(new_cond_limit,',');
+			sline += add_field(d.Index_Node1,',');
+			sline += add_field(d.Index_Node2,',');
+			sline += add_field(d.Node1,',');
+			sline += add_field(d.Node2,',');
+			sline += add_field(new_valve,',');
+			sline += add_field(d['Compressor pressure out'],',');
+			sline += add_field(d['Compressor Rate'],',');
+			sline += add_field(d['Rog'],',');
+			sline += add_field(d['Rod'],',');
+			sline += add_field(new_pressure_node1,',');
+			sline += add_field(d['Pressure_N2'],',');
+			sline += add_field(new_flow_node1,',');
+			sline += add_field(d['Flow_cd'],',');
+			sline += add_field(d['Temperature'],',');
+			sline += add_field(d['Lpk_g'],',');
+			sline += add_field(d['Lpk_cd'],',');
+			sline += add_field(d['C1_g'],',');
+			sline += add_field(d['C2_g'],',');
+			sline += add_field(d['C3_g'],',');
+			sline += add_field(d['iC4_g'],',');
+			sline += add_field(d['nC4_g'],',');
+			sline += add_field(d['iC5_g'],',');
+			sline += add_field(d['nC5_g'],',');
+			sline += add_field(d['C6plus_g'],',');
+			sline += add_field(d['CO2_g'],',');
+			sline += add_field(d['N2_g'],',');
+			sline += add_field(d['H2S_g'],',');
+			sline += add_field(d['C1_cd'],',');
+			sline += add_field(d['C2_cd'],',');
+			sline += add_field(d['C3_cd'],',');
+			sline += add_field(d['iC4_cd'],',');
+			sline += add_field(d['nC4_cd'],',');
+			sline += add_field(d['iC5_cd'],',');
+			sline += add_field(d['nC5_cd'],',');
+			sline += add_field(d['C6plus_cd'],',');
+			sline += add_field(d['CO2_cd'],',');
+			sline += add_field(d['N2_cd'],',');
+			sline += add_field(d['H2S_cd'],',');
+			sline += add_field(d['H2O_cd'],',');
+			sline += add_field(d['GHV'],'');
+			sline += '\n';
+
+			scenario_string += sline;
+
+		});
+	});
+
+	return scenario_string;
+
+
+
+}
+
+//Adds the field to the SQL insert 
+function add_field(x,separator) {
+	if(x==='') {
+		return "NULL" + separator;
+	} else {
+		return "'" + x + "'" + separator;
+	}
+}
+
+function serialize_scenario2() {
+
+	var scenario_string = 'Network_id	Scenario_id	Object_id	Data_type	Time_h	No_pipe	CondLimit	Index_Node1	Index_Node2	Node1	Node2	Valve	Compressor pressure out	Compressor Rate	Rog	Rod	Pressure_N1	Pressure_N2	Flow_g	Flow_cd	Temperature	Lpk_g	Lpk_cd	C1_g	C2_g	C3_g	iC4_g	nC4_g	iC5_g	nC5_g	C6plus_g	CO2_g	N2_g	H2S_g	C1_cd	C2_cd	C3_cd	iC4_cd	nC4_cd	iC5_cd	nC5_cd	C6plus_cd	CO2_cd	N2_cd	H2S_cd	H2O_cd	GHV\n';
+	//Write Comment line 
+	scenario_string += '\t\t99\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t'+scenario_comments+'\n';
+	//Write init data 
+	Object.keys(xdata_init_selection).forEach(function(e){
+		var d = xdata_init_selection[e];
+		var sline = d.Network_id + '\t';
+		sline += d.Scenario_id + '\t';
+		sline += d.Object_id + '\t';
+		sline += '0' + '\t';
+		sline += d.Time_h + '\t';
+		sline += d.No_pipe + '\t';
+		sline += d.CondLimit + '\t';
+		sline += d.Index_Node1 + '\t';
+		sline += d.Index_Node2 + '\t';
+		sline += d.Node1 + '\t';
+		sline += d.Node2 + '\t';
+		sline += d.Valve + '\t';
+		sline += d['Compressor pressure out'] + '\t';
+		sline += d['Compressor Rate'] + '\t';
+		sline += d['Rog'] + '\t';
+		sline += d['Rod'] + '\t';
+		sline += d['Pressure_N1'] + '\t'; //New Value 
+		sline += d['Pressure_N2'] + '\t'; 
+		sline += d['Flow_g'] + '\t'; //New Value
+		sline += d['Flow_cd'] + '\t';
+		sline += d['Temperature'] + '\t';
+		sline += d['Lpk_g'] + '\t';
+		sline += d['Lpk_cd'] + '\t';
+		sline += d['C1_g'] + '\t';
+		sline += d['C2_g'] + '\t';
+		sline += d['C3_g'] + '\t';
+		sline += d['iC4_g'] + '\t';
+		sline += d['nC4_g'] + '\t';
+		sline += d['iC5_g'] + '\t';
+		sline += d['nC5_g'] + '\t';
+		sline += d['C6plus_g'] + '\t';
+		sline += d['CO2_g'] + '\t';
+		sline += d['N2_g'] + '\t';
+		sline += d['H2S_g'] + '\t';
+		sline += d['C1_cd'] + '\t';
+		sline += d['C2_cd'] + '\t';
+		sline += d['C3_cd'] + '\t';
+		sline += d['iC4_cd'] + '\t';
+		sline += d['nC4_cd'] + '\t';
+		sline += d['iC5_cd'] + '\t';
+		sline += d['nC5_cd'] + '\t';
+		sline += d['C6plus_cd'] + '\t';
+		sline += d['CO2_cd'] + '\t';
+		sline += d['N2_cd'] + '\t';
+		sline += d['H2S_cd'] + '\t';
+		sline += d['H2O_cd'] + '\t';
+		sline += d['GHV'] + '\t';
+		sline += '\n';
+
+		scenario_string += sline;
+
+	});
+
+	Object.keys(scdata_id).forEach(function(hr){
+		Object.keys(scdata_id[hr]).forEach(function(pipe_name){
+			var d = scdata_id[hr][pipe_name];
+			var new_pressure_node1 = scdata_id[hr][pipe_name]['Pressure_N1'];
+			var new_flow_node1 = scdata_id[hr][pipe_name]['Flow_g'];
+			var new_cond_limit = scdata_id[hr][pipe_name]['CondLimit'];
+			var new_valve = scdata_id[hr][pipe_name]['Valve'];
+
+			var sline = d.Network_id + '\t';
+				sline += d.Scenario_id + '\t';
+				sline += d.Object_id + '\t';
+				sline += d.Data_type + '\t';
+				sline += hr + '\t';
+				sline += d.No_pipe + '\t';
+				sline += new_cond_limit + '\t';
+				sline += d.Index_Node1 + '\t';
+				sline += d.Index_Node2 + '\t';
+				sline += d.Node1 + '\t';
+				sline += d.Node2 + '\t';
+				sline += new_valve + '\t';
+				sline += d['Compressor pressure out'] + '\t';
+				sline += d['Compressor Rate'] + '\t';
+				sline += d['Rog'] + '\t';
+				sline += d['Rod'] + '\t';
+				sline += new_pressure_node1 + '\t'; //New Value 
+				sline += d['Pressure_N2'] + '\t'; 
+				sline += new_flow_node1 + '\t'; //New Value
+				sline += d['Flow_cd'] + '\t';
+				sline += d['Temperature'] + '\t';
+				sline += d['Lpk_g'] + '\t';
+				sline += d['Lpk_cd'] + '\t';
+				sline += d['C1_g'] + '\t';
+				sline += d['C2_g'] + '\t';
+				sline += d['C3_g'] + '\t';
+				sline += d['iC4_g'] + '\t';
+				sline += d['nC4_g'] + '\t';
+				sline += d['iC5_g'] + '\t';
+				sline += d['nC5_g'] + '\t';
+				sline += d['C6plus_g'] + '\t';
+				sline += d['CO2_g'] + '\t';
+				sline += d['N2_g'] + '\t';
+				sline += d['H2S_g'] + '\t';
+				sline += d['C1_cd'] + '\t';
+				sline += d['C2_cd'] + '\t';
+				sline += d['C3_cd'] + '\t';
+				sline += d['iC4_cd'] + '\t';
+				sline += d['nC4_cd'] + '\t';
+				sline += d['iC5_cd'] + '\t';
+				sline += d['nC5_cd'] + '\t';
+				sline += d['C6plus_cd'] + '\t';
+				sline += d['CO2_cd'] + '\t';
+				sline += d['N2_cd'] + '\t';
+				sline += d['H2S_cd'] + '\t';
+				sline += d['H2O_cd'] + '\t';
+				sline += d['GHV'] + '\t';
+				sline += '\n';
+
+				scenario_string += sline;
+		});
+	});
+	return scenario_string;
+}
+
+function serialize_nominations() {
+	var nominations_data = '';
+	nomination_nodes.forEach(function(d){
+		var new_value = $('#nom_' + d).val();
+		if(new_value == undefined) new_value=0;
+		if(new_value=='') new_value = 0;
+		nominations_data += d + '\tMMscf/d\t' + new_value + '\n';
+	});
+	//console.log(nominations_data);
+	return nominations_data;
+}
+
+
+function calculate_nomination_totals() {
+	nomination_totals = [];
+	nomination_totals_out = [];
+	Object.keys(scenario_hours).forEach(function(h){
+		Object.keys(netdata).forEach(function(i){
+			//Only Nodes with Suply_offtke==1
+			if(netdata[i]['Suply_offtke']==1) {
+				var day = scenario_hours[h];
+				var hday = scenario_hours[h].substr(0,10);
+				var no_of_hours = scenario_days[hday]['hours'];
+				var pipe_name = netdata[i]['Node1'] + ':' + netdata[i]['Node2'];
+				var pipe_id = netdata[i]['Object_id'];
+				//console.log(day + '->' + pipe_name);
+				if(nomination_totals[hday]==undefined) nomination_totals[hday] = {};
+				if(nomination_totals[hday][pipe_id]==undefined) {
+					nomination_totals[hday][pipe_id] = {};
+					if(scdata_id[day][pipe_id]!=undefined) {
+						nomination_totals[hday][pipe_id]['Flow_g']  = parseFloat(scdata_id[day][pipe_id]['Flow_g'])/no_of_hours;
+						nomination_totals[hday][pipe_id]['Flow_cd'] = parseFloat(scdata_id[day][pipe_id]['Flow_cd'])/no_of_hours;
+						nomination_totals[hday][pipe_id]['Pipe_name'] = pipe_name;
+						//if(pipe_id==1) console.log(nomination_totals[hday][pipe_id]['Flow_g']);
+					}
+					
+				} else {
+					if(scdata_id[day][pipe_id]!=undefined) {
+						nomination_totals[hday][pipe_id]['Flow_g'] += parseFloat(scdata_id[day][pipe_id]['Flow_g'])/no_of_hours;
+						nomination_totals[hday][pipe_id]['Flow_cd'] += parseFloat(scdata_id[day][pipe_id]['Flow_cd'])/no_of_hours;
+						//if(pipe_id==1) console.log(nomination_totals[hday][pipe_id]['Flow_g']);
+					}
+					
+				}
+			}
+			//Output nodes
+			var pipe_id = netdata[i]['Object_id'];
+			if(pipe_id==75||pipe_id==73||pipe_id==180||pipe_id==266) {
+				var day = scenario_hours[h];
+				var hday = scenario_hours[h].substr(0,10);
+				var no_of_hours = scenario_days[hday]['hours'];
+				var pipe_name = netdata[i]['Node1'] + ':' + netdata[i]['Node2'];
+				if(nomination_totals_out[hday]==undefined) nomination_totals_out[hday] = {};
+				if(nomination_totals_out[hday][pipe_id]==undefined) {
+					nomination_totals_out[hday][pipe_id] = {};
+					if(scdata_id[day][pipe_id]!=undefined) {
+						nomination_totals_out[hday][pipe_id]['Flow_g']  = parseFloat(scdata_id[day][pipe_id]['Flow_g'])/no_of_hours;
+						nomination_totals_out[hday][pipe_id]['Flow_cd'] = parseFloat(scdata_id[day][pipe_id]['Flow_cd'])/no_of_hours;
+						nomination_totals_out[hday][pipe_id]['Pipe_name'] = pipe_name;
+						//if(pipe_id==1) console.log(nomination_totals[hday][pipe_id]['Flow_g']);
+					}
+					
+				} else {
+					if(scdata_id[day][pipe_id]!=undefined) {
+						nomination_totals_out[hday][pipe_id]['Flow_g'] += parseFloat(scdata_id[day][pipe_id]['Flow_g'])/no_of_hours;
+						nomination_totals_out[hday][pipe_id]['Flow_cd'] += parseFloat(scdata_id[day][pipe_id]['Flow_cd'])/no_of_hours;
+						//if(pipe_id==1) console.log(nomination_totals[hday][pipe_id]['Flow_g']);
+					}
+					
+				}
+
+			}
+		});
+	});
+}
+
+//Add the nominations table V2
+//Add UCGR from array ucgr
+function add_nominations_table_v2() {
+	calculate_nomination_totals();
+	var n_html = '<table class="table table-condensed table-hover"><thead><tr><th>Date</th><th>Field</th><th>Gas Production [MMscf/d]</th><th>uCGR [Bbls/MMscf]</th></tr></thead>';
+	Object.keys(nomination_totals).forEach(function(day){
+		var shortday = day.substr(0,2) + '' + day.substr(3,2) + '' + day.substr(6,4);
+		var day_display = format_date(day + ' 00:00:00').substr(0,11);
+		Object.keys(nomination_totals[day]).forEach(function(id){
+
+			n_html += '<tr><td>' + day_display + '</td><td>' + nomination_totals[day][id]['Pipe_name'].split(":")[0] + '</td>';
+			n_html += '<td><input style="width:200px" id="nom_'+ shortday + '_' + id +'" name="nom_'+ shortday + '_' + id + '" type="text" placeholder="" class="form-control input-md text-right" value="' + nomination_totals[day][id]['Flow_g'].toFixed(0) + '" onchange="change_nomination();" /></td>';
+			n_html += '<td><input style="width:200px" id="nomcd_'+ shortday + '_' + id +'" name="nomcd_'+ shortday + '_' + id + '" type="text" placeholder="" class="form-control input-md text-right" value="' + ucgr[id] + '" onchange="change_nomination();" /></td>';
+			n_html += '</tr>';
+		});
+		
+		
+	});
+	n_html += '</table>';
+	//Add Output nodes
+	n_html += '<table class="table table-condensed table-hover"><thead><tr><th>Date</th><th>Field</th><th>Demand [MMscf/d]</th></tr></thead>';
+	Object.keys(nomination_totals_out).forEach(function(day){
+		var shortday = day.substr(0,2) + '' + day.substr(3,2) + '' + day.substr(6,4);
+		var day_display = format_date(day + ' 00:00:00').substr(0,11);
+		Object.keys(nomination_totals_out[day]).forEach(function(id){
+
+			n_html += '<tr><td>' + day_display + '</td><td>' + nomination_totals_out[day][id]['Pipe_name'].split(":")[1] + '</td>';
+			n_html += '<td><input style="width:200px" id="nom_'+ shortday + '_' + id +'" name="nom_'+ shortday + '_' + id + '" type="text" placeholder="" class="form-control input-md text-right" value="' + nomination_totals_out[day][id]['Flow_g'].toFixed(0) + '" onchange="change_nomination();" /></td>';
+			//n_html += '<td><input style="width:200px" id="nomcd_'+ shortday + '_' + id +'" name="nomcd_'+ shortday + '_' + id + '" type="text" placeholder="" class="form-control input-md text-right" value="' + ucgr[id] + '" onchange="change_nomination();" /></td>';
+			n_html += '</tr>';
+		});
+		
+		
+	});
+	n_html += '</table>';
+	$('#nominations-table').empty().html(n_html);
+}
+
+
+/**
+ *  Updates the value (percentage) for a valve for the next hours up to the end of the scenario
+ *
+ */
+function update_valve_fwd(pipe,pipe_idx,hr_idx) {
+	//pipe = pipe name 
+	//hr_idx = (index) hour when the new condition was set 
+	var new_valve_value = $('#v_'+pipe_idx+'_'+hr_idx).val();
+
+	if(isNaN(new_valve_value) || new_valve_value<0 || new_valve_value>100 || new_valve_value=='') {
+		alert('Invalid value!');
+		$('#v_'+pipe_idx+'_'+hr_idx).val(parseInt(scdata_id[time_idx][pipe_idx]['Valve']));
+		return;
+	}
+
+
+	var i=0;
+	Object.keys(scdata_id).forEach(function(t){ 
+		if(hr_idx<i) {
+			//Apply 
+			scdata_id[t][pipe_idx]['Valve'] = new_valve_value;
+			$('#v_'+pipe_idx+'_'+i).val(new_valve_value);
+		}
+
+		i++;
+	});
+	//Update button color
+	$('#apply_pipes_settings_button').removeClass('btn-default').removeClass('disabled').addClass('btn-danger');
+
+}
+
+
+
+
+
+function edit_parameter(hour, node_id, uom, i) {
+	var node_name = netdata[node_id]['Node1'] + ':' + netdata[node_id]['Node2'];
+	bootbox.dialog({
+	                title: "Edit value for " + hour + ' : ' + node_name,
+	                message: '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="name">'+ uom +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="name" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + sdata[hour][node_name][uom] + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>',
+	                buttons: {
+	                    success: {
+	                        label: "Save",
+	                        className: "btn-success",
+	                        callback: function () {
+	                            var new_value = $('#name').val();
+	                            sdata[hour][node_name][uom] = new_value;
+	                            //Update Value in table 
+	                            $('#sc' + i).text(new_value);
+
+	                        }
+	                    }
+	                }
+	            }
+	        );
+}
+
+
+var conditions = [];
+
+//Edit V2
+function edit_parameters(hour, node_id, idx) {
+	var node_name = netdata[node_id]['Node1'] + ':' + netdata[node_id]['Node2'];
+	//Retrieve conditions
+	var object_id = scdata_id[hour][node_id]['No_pipe'];
+	var disabled = '';
+	if(ucgr[object_id]!=undefined) disabled=' disabled ';
+	//console.log(object_id);
+	var supply_offtake = netdata[object_id]['Suply_offtke'];
+	var cond1 = netdata[object_id]['CondLimit_1'];
+	//console.log(cond1);
+	var cond2 = netdata[object_id]['CondLimit_2'];
+	//console.log(cond2);
+	var current_cond = scdata_id[hour][node_id]['CondLimit'];
+	var current_value = parseFloat(scdata_id[hour][node_id]['Pressure_N1']).toFixed(2);
+	if(supply_offtake==2) {
+		current_value = parseFloat(scdata_id[hour][node_id]['Pressure_N2']).toFixed(2);
+		console.log('id:' + node_id + 'P2:' + current_value);
+	}
+	if(supply_offtake==0 && current_cond==7) {
+		current_value = parseFloat(scdata_id[hour][node_id]['Pressure_N2']).toFixed(2);
+		console.log('id:' + node_id + 'P2:' + current_value);
+	}
+	//Select box 
+	var selected='';
+	var select_box = '<select id="sel_cond_limit" class="form-control">';
+	if(current_cond==cond1) selected='selected';
+	select_box += '<option value="' + cond1 + '" ' + selected + '>'+ cl_label[cond1] + '</option>';
+	selected='';
+	if(current_cond==cond2) selected='selected';
+	select_box += '<option value="' + cond2 + '" ' + selected + '>'+ cl_label[cond2] + '</option>';
+	select_box += '</select>';
+	//console.log(select_box);
+
+	bootbox.dialog({
+	                title: "Edit parameters for " + hour + ' : ' + node_name,
+	                message: '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="cond_limit">'+ 'Condition Limit:' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    select_box +
+	                    '<span class="help-block">Select Condition</span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' + 
+	                	'<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="name">'+ 'Pressure (Barg):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="node_pressure" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + current_value + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' + 
+	                    '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="n2">'+ 'Gas Flow (MMscf/d):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="flow_g" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + parseFloat(scdata_id[hour][node_id]['Flow_g']).toFixed(0) + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' +
+	                    '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="flow_cd">'+ 'Condy Flow (Bbls/d):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="flow_cd" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + parseFloat(scdata_id[hour][node_id]['Flow_cd']).toFixed(0) + '"' + disabled + '> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' + 
+	                    '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="start_time_select">'+ 'Start Time:' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    get_hours_select('start_time_select', idx) +
+	                    '<span class="help-block">Select Condition</span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' +
+	                    '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="end_time_select">'+ 'End Time:' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    get_hours_select('end_time_select', idx) +
+	                    '<span class="help-block">Select Condition</span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>',
+	                buttons: {
+	                    success: {
+	                        label: "Save",
+	                        className: "btn-success",
+	                        callback: function () {
+	                        	var start_time_idx = parseInt($('#start_time_select').val());
+	                        	var end_time_idx = parseInt($('#end_time_select').val());
+
+	                        	el_id = idx +'_'+scdata_id[hour][node_id]['No_pipe'];
+	                        	var pipe_id = scdata_id[hour][node_id]['No_pipe'];
+
+	                        	var pipe_name = netdata[node_id]['Node1'] + ':' + netdata[node_id]['Node2'];
+	                            var new_pressure = $('#node_pressure').val();
+	                            var new_flow_g = $('#flow_g').val();
+	                            var new_flow_cd = $('#flow_cd').val();
+	                            var new_cond_limit = $('#sel_cond_limit').val();
+	                            //Parameter Checking -NaN
+	                            if(isNaN(new_pressure)||isNaN(new_flow_g)||isNaN(new_flow_cd)) {
+	                            	alert('Invalid Parameter(s) value!');
+	                            	return 0;
+	                            }
+	                            //Parameter Checking - negative
+	                            if(new_cond_limit) {
+	                            	//Do not allow negative numbers
+	                            	if(new_pressure<0 || new_flow_g<0 || new_flow_cd<0) {
+	                            		alert('Invalid Parameter(s) value!');
+	                            		return 0;
+	                            	}
+	                            }
+
+	                            //Parameter checking - CondLimit==0
+	                            if(new_cond_limit==0) {
+	                            	//Do not allow negative numbers
+	                            	if(new_pressure<0 || new_flow_cd<0 ) {
+	                            		alert('Invalid Parameter(s) value!');
+	                            		return 0;
+	                            	}
+	                            }
+
+	                            //Pmin/Pmax check for condition 7 and 22
+	                            if(new_cond_limit==7 || new_cond_limit==22 ) {
+	                            	var end_node = netdata[node_id]['Node2'];
+	                            	if(node_pressure_limits[end_node]!=undefined && node_pressure_limits[end_node]['pmin']!=undefined && node_pressure_limits[end_node]['pmax']!=undefined) {
+	                            		//We check only if we have Pmin and Pmax
+	                            		var node_pmin = parseFloat(node_pressure_limits[end_node]['pmin']);
+	                            		var node_pmax = parseFloat(node_pressure_limits[end_node]['pmax']);
+	                            		if( new_pressure<node_pmin || new_pressure>node_pmax) {
+	                            			alert('Node pressure not within the allowed range: ' + node_pmin.toFixed(0) + ' - ' + node_pmax.toFixed(0));
+	                            			return 0;
+	                            		}
+	                            	}
+	                            }
+
+	                            //Save values 
+	                            Object.keys(scenario_hours).forEach(function(j){
+	                            	if( j>=start_time_idx && j<=end_time_idx) {
+	                            		console.log('Hour:'+ j );
+	                            		//Save values
+	                            		var j_hour = scenario_hours[j];
+	                            		el_id = j +'_' + pipe_id;
+	                            		scdata_id[j_hour][node_id]['Flow_g'] = new_flow_g;
+
+	                            		if(ucgr[pipe_id]!=undefined) {
+			                            	//Calculate it
+			                            	scdata_id[j_hour][node_id]['Flow_cd'] = parseFloat(ucgr[node_id]) * parseFloat(new_flow_g);
+			                            } else {
+			                            	//Read the entered value
+			                            	scdata_id[j_hour][node_id]['Flow_cd'] = new_flow_cd;
+			                            }
+
+			                            scdata_id[j_hour][node_id]['CondLimit'] = new_cond_limit;
+	                            		$( '#cond_' + j + '_' + node_id ).text(cl_label[new_cond_limit]);
+
+	                            		//Apply Node Pressure 
+			                            if(supply_offtake==2 || ( supply_offtake==0 && new_cond_limit==7 )) {
+			                            	scdata_id[j_hour][node_id]['Pressure_N2'] = new_pressure;
+			                            	$( '#n2_' + el_id ).text(new_pressure);
+			                            } else {
+			                            	scdata_id[j_hour][node_id]['Pressure_N1'] = new_pressure;
+			                            	$( '#n1_' + el_id ).text(new_pressure);
+			                            }
+
+			                            $( '#flow_' + el_id ).text(scdata_id[j_hour][node_id]['Flow_g']);
+	                            		$( '#flowcd_' + el_id ).text(scdata_id[j_hour][node_id]['Flow_cd']);
+
+	                            	}
+
+	                            });
+
+	                            //scdata_id[hour][node_id]['Flow_g'] = new_flow_g;
+	                            
+	                            //scdata[hour][node_name]['Flow_cd'] = new_flow_cd;
+	                            //Calculate Flow_cd 
+	                            /*
+	                            if(ucgr[pipe_id]!=undefined) {
+	                            	//Calculate it
+	                            	scdata_id[hour][node_id]['Flow_cd'] = parseFloat(ucgr[node_id]) * parseFloat(new_flow_g);
+	                            } else {
+	                            	//Read the entered value
+	                            	scdata_id[hour][node_id]['Flow_cd'] = new_flow_cd;
+	                            }
+	                            */
+	                            
+	                            //scdata[hour][node_name]['CondLimit'] = new_cond_limit;
+	                            //Apply to all data 
+	                            /*
+	                            var j=0;
+	                            Object.keys(scdata_id).forEach(function(h){
+	                            	scdata_id[h][node_id]['CondLimit'] = new_cond_limit;
+	                            	$( '#cond_' + j + '_' + node_id ).text(cl_label[new_cond_limit]);
+	                            	j++;
+	                            });
+								*/
+	                            //Apply Node Pressure 
+	                            /*
+	                            if(supply_offtake==2 || ( supply_offtake==0 && new_cond_limit==7 )) {
+	                            	scdata_id[hour][node_id]['Pressure_N2'] = new_pressure;
+	                            	$( '#n2_' + el_id ).text(new_pressure);
+	                            } else {
+	                            	scdata_id[hour][node_id]['Pressure_N1'] = new_pressure;
+	                            	$( '#n1_' + el_id ).text(new_pressure);
+	                            }
+	                            */
+
+	                            //Update the nominations?
+	                            calculate_nomination_totals();
+	                            display_scenario_table_forward();
+
+
+	                            
+
+	                        }
+	                    }
+	                }
+	            }
+	        );
+}
+/*
+function edit_parameters(hour, node_id, idx) {
+	var node_name = netdata[node_id]['Node1'] + ':' + netdata[node_id]['Node2'];
+	//Retrieve conditions
+	var object_id = scdata_id[hour][node_id]['No_pipe'];
+	var disabled = '';
+	if(ucgr[object_id]!=undefined) disabled=' disabled ';
+	//console.log(object_id);
+	var supply_offtake = netdata[object_id]['Suply_offtke'];
+	var cond1 = netdata[object_id]['CondLimit_1'];
+	//console.log(cond1);
+	var cond2 = netdata[object_id]['CondLimit_2'];
+	//console.log(cond2);
+	var current_cond = scdata_id[hour][node_id]['CondLimit'];
+	var current_value = parseFloat(scdata_id[hour][node_id]['Pressure_N1']).toFixed(2);
+	if(supply_offtake==2) {
+		current_value = parseFloat(scdata_id[hour][node_id]['Pressure_N2']).toFixed(2);
+		console.log('id:' + node_id + 'P2:' + current_value);
+	}
+	if(supply_offtake==0 && current_cond==7) {
+		current_value = parseFloat(scdata_id[hour][node_id]['Pressure_N2']).toFixed(2);
+		console.log('id:' + node_id + 'P2:' + current_value);
+	}
+	//Select box 
+	var selected='';
+	var select_box = '<select id="sel_cond_limit" class="form-control">';
+	if(current_cond==cond1) selected='selected';
+	select_box += '<option value="' + cond1 + '" ' + selected + '>'+ cl_label[cond1] + '</option>';
+	selected='';
+	if(current_cond==cond2) selected='selected';
+	select_box += '<option value="' + cond2 + '" ' + selected + '>'+ cl_label[cond2] + '</option>';
+	select_box += '</select>';
+	//console.log(select_box);
+
+	bootbox.dialog({
+	                title: "Edit parameters for " + hour + ' : ' + node_name,
+	                message: '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="cond_limit">'+ 'Condition Limit:' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    select_box +
+	                    '<span class="help-block">Select Condition</span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' + 
+	                	'<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="name">'+ 'Pressure (Barg):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="node_pressure" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + current_value + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' + 
+	                    '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="n2">'+ 'Gas Flow (MMscf/d):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="flow_g" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + parseFloat(scdata_id[hour][node_id]['Flow_g']).toFixed(0) + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' +
+	                    '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="flow_cd">'+ 'Condy Flow (Bbls/d):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="flow_cd" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + parseFloat(scdata_id[hour][node_id]['Flow_cd']).toFixed(0) + '"' + disabled + '> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>',
+	                buttons: {
+	                    success: {
+	                        label: "Save",
+	                        className: "btn-success",
+	                        callback: function () {
+	                        	el_id = idx +'_'+scdata_id[hour][node_id]['No_pipe'];
+	                        	var pipe_id = scdata_id[hour][node_id]['No_pipe'];
+	                        	var pipe_name = netdata[node_id]['Node1'] + ':' + netdata[node_id]['Node2'];
+	                            var new_pressure = $('#node_pressure').val();
+	                            var new_flow_g = $('#flow_g').val();
+	                            var new_flow_cd = $('#flow_cd').val();
+	                            var new_cond_limit = $('#sel_cond_limit').val();
+	                            //Parameter Checking -NaN
+	                            if(isNaN(new_pressure)||isNaN(new_flow_g)||isNaN(new_flow_cd)) {
+	                            	alert('Invalid Parameter(s) value!');
+	                            	return 0;
+	                            }
+	                            //Parameter Checking - negative
+	                            if(new_cond_limit) {
+	                            	//Do not allow negative numbers
+	                            	if(new_pressure<0 || new_flow_g<0 || new_flow_cd<0) {
+	                            		alert('Invalid Parameter(s) value!');
+	                            		return 0;
+	                            	}
+	                            }
+
+	                            //Parameter checking - CondLimit==0
+	                            if(new_cond_limit==0) {
+	                            	//Do not allow negative numbers
+	                            	if(new_pressure<0 || new_flow_cd<0 ) {
+	                            		alert('Invalid Parameter(s) value!');
+	                            		return 0;
+	                            	}
+	                            }
+
+	                            scdata_id[hour][node_id]['Flow_g'] = new_flow_g;
+	                            
+	                            //scdata[hour][node_name]['Flow_cd'] = new_flow_cd;
+	                            //Calculate Flow_cd 
+	                            if(ucgr[pipe_id]!=undefined) {
+	                            	//Calculate it
+	                            	scdata_id[hour][node_id]['Flow_cd'] = parseFloat(ucgr[node_id]) * parseFloat(new_flow_g);
+	                            } else {
+	                            	//Read the entered value
+	                            	scdata_id[hour][node_id]['Flow_cd'] = new_flow_cd;
+	                            }
+	                            
+	                            
+	                            //scdata[hour][node_name]['CondLimit'] = new_cond_limit;
+	                            //Apply to all data 
+	                            var j=0;
+	                            Object.keys(scdata_id).forEach(function(h){
+	                            	scdata_id[h][node_id]['CondLimit'] = new_cond_limit;
+	                            	$( '#cond_' + j + '_' + node_id ).text(cl_label[new_cond_limit]);
+	                            	j++;
+	                            });
+	                            //Apply Node Pressure 
+	                            if(supply_offtake==2 || ( supply_offtake==0 && new_cond_limit==7 )) {
+	                            	scdata_id[hour][node_id]['Pressure_N2'] = new_pressure;
+	                            	$( '#n2_' + el_id ).text(new_pressure);
+	                            } else {
+	                            	scdata_id[hour][node_id]['Pressure_N1'] = new_pressure;
+	                            	$( '#n1_' + el_id ).text(new_pressure);
+	                            }
+
+	                            //Update the nominations?
+	                            calculate_nomination_totals();
+
+
+	                            $( '#flow_' + el_id ).text(scdata_id[hour][node_id]['Flow_g']);
+	                            $( '#flowcd_' + el_id ).text(scdata_id[hour][node_id]['Flow_cd']);
+
+	                        }
+	                    }
+	                }
+	            }
+	        );
+}
+*/
+
+//Edit Init Parameters
+function edit_init_parameters(hour, node_id, i) {
+	//Retrieve conditions
+	var pressure_n1 = parseFloat(xdata_init_selection[i]['Pressure_N1']).toFixed(2);
+	var pressure_n2 = parseFloat(xdata_init_selection[i]['Pressure_N2']).toFixed(2);
+	var node_name = netdata[node_id]['Node1'] + ':' + netdata[node_id]['Node2'];
+
+	bootbox.dialog({
+	                title: "Edit parameters for " + hour + ' : ' + node_name,
+	                message: '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="name">'+ 'Pressure From (Barg):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="pressure_n1" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + pressure_n1 + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' + 
+	                	'<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="name">'+ 'Pressure To (Barg):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="pressure_n2" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + pressure_n2 + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' + 
+	                    '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="n2">'+ 'Gas Flow (MMscf/d):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="flow_g" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + parseFloat(xdata_init_selection[i]['Flow_g']).toFixed(0) + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>' +
+	                    '<div class="row">  ' +
+	                    '<div class="col-md-12"> ' +
+	                    '<form class="form-horizontal"> ' +
+	                    '<div class="form-group"> ' +
+	                    '<label class="col-md-4 control-label" for="flow_cd">'+ 'Condy Flow (Bbls/d):' +'</label> ' +
+	                    '<div class="col-md-4"> ' +
+	                    '<input id="flow_cd" name="name" type="text" placeholder="New value..." class="form-control input-md" value="' + parseFloat(xdata_init_selection[i]['Flow_cd']).toFixed(0) + '"> ' +
+	                    '<span class="help-block"></span> </div> ' +
+	                    '</div> ' +
+	                    '</form> </div>  </div>',
+	                buttons: {
+	                    success: {
+	                        label: "Save",
+	                        className: "btn-success",
+	                        callback: function () {
+	                        	var pipe_id = xdata_init_selection[i]['No_pipe'];
+	                        	var new_pressure_n1 = $('#pressure_n1').val();
+	                        	var new_pressure_n2 = $('#pressure_n2').val();
+	                        	var new_flow_g = $('#flow_g').val();
+								var new_flow_cd = $('#flow_cd').val();
+								//var cond_limit = $('#icond_'+i+'_'+node_id).val();
+								if( isNaN(new_pressure_n1) || isNaN(new_pressure_n2) || isNaN(new_flow_g) || isNaN(new_flow_cd) ) {
+									alert('Invalid Parameter(s) value!');
+									return(-1);
+								}
+								//Parameter Checking - negative
+	                            if(xdata_init_selection[i]['CondLimit']) {
+	                            	//Do not allow negative numbers
+	                            	if(new_pressure_n1<0 || new_pressure_n2<0 || new_flow_g<0 || new_flow_cd<0 ) {
+	                            		alert('Invalid Parameter(s) value!');
+	                            		return 0;
+	                            	}
+	                            }
+
+	                        	xdata_init_selection[i]['Pressure_N1'] = new_pressure_n1;
+	                        	xdata_init_selection[i]['Pressure_N2'] = new_pressure_n2;
+	                        	xdata_init_selection[i]['Flow_g'] = new_flow_g;
+	                        	xdata_init_selection[i]['Flow_cd'] = new_flow_cd;
+
+	                        	//Set the value in xinit_node_pressure
+	                        	xinit_node_pressure[netdata[pipe_id]['Node1']] = new_pressure_n1;
+
+	                        	el_id = i +'_'+xdata_init_selection[i]['No_pipe'];
+	                            
+	                            $( '#in1_' + el_id ).text(new_pressure_n1);
+	                            $( '#in2_' + el_id ).text(new_pressure_n2);
+	                            $( '#iflow_' + el_id ).text(new_flow_g);
+	                            $( '#iflowcd_' + el_id ).text(new_flow_cd);
+
+	                        }
+	                    }
+	                }
+	            }
+	        );
+}
+
+
+/**
+ * Draws a chart 
+ * Parameters: pipe_name, 
+ */
+function chart_pipe(um) {
+	//Prepare Data from pdata
+	var chart_data = []; 
+	var node2_data = []; 
+	var i=0; 
+	var j=0;
+	//Labels 
+	var um_labels = {'Flow_g':'Gas Flow [MMscf/d]', 'Flow_cd': 'Condy Flow [BPD]','Pressure_N1':'Pressure [barg]', 'Lpk_g':'Linepack Gas [MMscf]',
+		'Lpk_cd':'Inventory [bbls]', 'C2_g':'C2 [mole %]', 'CO2_g':'CO2 [mole %]', 'H2S_g':'H2S [ppmV]',
+		'C5plus_g':'C5+ [mole %]','N2_g':'N2 [mole %]', 'GHV': 'GHV [btu/scf]'
+		};
+
+	//Pipe Name
+	var pipe_id = $('#set_pipe_name').val();
+	var pipe_name = pdata_id[Object.keys(pdata_id)[0]][pipe_id]['Node1'] + ':' + pdata_id[Object.keys(pdata_id)[0]][pipe_id]['Node2'];
+	Object.keys(pdata_id).forEach(function(k){
+		if(um=='C5plus_g') {
+			chart_data.push({ x: i++, y: (parseFloat(pdata_id[k][pipe_id]['iC5_g'])+parseFloat(pdata_id[k][pipe_id]['nC5_g'])+parseFloat(pdata_id[k][pipe_id]['C6plus_g']))*100.0 });
+		} else if( um == 'H2S_g' ) {
+			chart_data.push({ x: i++, y:parseFloat(pdata_id[k][pipe_id][um])*1000000.0 });
+		} else if( um == 'C2_g' || um == 'CO2_g' || um == 'N2_g') {
+			chart_data.push({ x: i++, y:parseFloat(pdata_id[k][pipe_id][um])*100.0 });
+		} else {
+			chart_data.push({ x: i++, y:parseFloat(pdata_id[k][pipe_id][um]) });
+			if(um=='Pressure_N1') node2_data.push({ x: j++, y:parseFloat(pdata_id[k][pipe_id]['Pressure_N2']) });
+		}
+		
+	});
+
+	//Empty Container 
+	$('#chart1 svg').empty();
+	//Set Chart title
+	$('#chart1_title').html('<h3>'+pipe_name+' - ' + um_labels[um] + '</h3>');
+	//Draw Chart
+	nv.addGraph(function() {
+	  var chart = nv.models.lineChart()
+	                .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+	                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+	                .transitionDuration(350)  //how fast do you want the lines to transition?
+	                .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+	                .showYAxis(true)        //Show the y-axis
+	                .showXAxis(true)        //Show the x-axis
+	  ;
+
+	  chart.xAxis     //Chart x-axis settings
+	      .axisLabel('Hour');
+	      //.tickFormat(d3.format(',r'));
+
+	  
+	  //For gas .05f
+	  if(um=='C1_g' || um=='CO2_g' || um=='C5plus_g' || um=='C2_g' || um=='C5plus_g' || um=='N2_g') {
+	  	chart.yAxis.axisLabel(um_labels[um]).tickFormat(d3.format('.05f'));
+	  } else {
+	  	chart.yAxis     //Chart y-axis settings
+	      .axisLabel(um_labels[um])
+	      .tickFormat(d3.format('.02f'));
+	  }
+
+	  if(um=='Flow_g' || um=='Flow_cd') {
+	  	chart.yAxis     //Chart y-axis settings
+	      .axisLabel(um_labels[um])
+	      .tickFormat(d3.format('.0f'));
+	  }
+
+	  /* Done setting the chart up? Time to render it!*/
+	  var myData = [
+	    {
+	      values: chart_data,      //values - represents the array of {x,y} data points
+	      key: um, //key  - the name of the series.
+	      color: '#ff7f0e'  //color - optional: choose your own line color.
+	    }
+	  ];  
+	  
+	  if(um=='Pressure_N1') {
+	  	myData = [
+	    {
+	      values: chart_data,      //values - represents the array of {x,y} data points
+	      key: um, //key  - the name of the series.
+	      color: '#ff7f0e'  //color - optional: choose your own line color.
+	    },{
+	  		values: node2_data,      //values - represents the array of {x,y} data points
+	      	key: 'Pressure_N2', //key  - the name of the series.
+	      	color: '#440000'  //color - optional: choose your own line color.
+	  	}
+	  ];  
+	  }
+	  
+	  chart.forceY([0]);
+	  if(um=='GHV') chart.forceY([0, 1300]);
+
+	  d3.select('#chart1 svg')    //Select the <svg> element you want to render the chart in.   
+	      .datum(myData)         //Populate the <svg> element with chart data...
+	      .call(chart);          //Finally, render the chart!
+
+	  //GHV - Draw lines
+	  if(um=='GHV') {
+	  	var x_max = scenario_hours.length - 1;
+	  	var line1 = d3.select('#chart1 svg')
+		    .append('line')
+		    .attr({
+		        x1: 100 + chart.xAxis.scale()(0),
+		        y1: 30 + chart.yAxis.scale()(1000),
+		        x2: 100 + chart.xAxis.scale()(x_max),
+		        y2: 30 + chart.yAxis.scale()(1000)
+		    })
+		    .style("stroke", "#000");
+
+		var line2 = d3.select('#chart1 svg')
+		    .append('line')
+		    .attr({
+		        x1: 100 + chart.xAxis.scale()(0),
+		        y1: 30 + chart.yAxis.scale()(1200),
+		        x2: 100 + chart.xAxis.scale()(x_max),
+		        y2: 30 + chart.yAxis.scale()(1200)
+		    })
+		    .style("stroke", "#000");
+	  }
+	  //Update the chart when window resizes.
+	  nv.utils.windowResize(function() { chart.update() });
+	  return chart;
+	});
+
+}
+
+/**
+ * Draws a PI vs Model Chart for Reverse
+ * Parameters: pipe_name, 
+ */
+function chart_pi(um) {
+	//Prepare Data from pdata
+	var chart_data = []; 
+	var node2_data = []; 
+	var chart_data_sc = [];
+	var node2_data_sc = [];
+	var i=0; 
+	var j=0;
+	//Labels 
+	var um_labels = {'Flow_g':'Gas Flow [MMscf/d]', 'Flow_cd': 'Condy Flow [BPD]','Pressure_N1':'Pressure [barg]', 'Lpk_g':'Linepack Gas [MMscf]',
+		'Lpk_cd':'Inventory [bbls]', 'C2_g':'C2 [mole %]', 'CO2_g':'CO2 [mole %]', 'H2S_g':'H2S [ppmV]',
+		'C5plus_g':'C5+ [mole %]','N2_g':'N2 [mole %]', 'GHV': 'GHV [btu/scf]'
+		};
+
+	//If no results do not display anything
+	if(scenario_output==0) return;
+
+	//Pipe Name
+	var pipe_id = $('#set_pi_id').val();
+	var pipe_name = pdata_id[Object.keys(pdata_id)[0]][pipe_id]['Node1'] + ':' + pdata_id[Object.keys(pdata_id)[0]][pipe_id]['Node2'];
+	Object.keys(pdata_id).forEach(function(k){
+
+		if(um=='C5plus_g') {
+			chart_data_sc.push({ x: i, y: (parseFloat(scdata_id[k][pipe_id]['iC5_g'])+parseFloat(scdata_id[k][pipe_id]['nC5_g'])+parseFloat(scdata_id[k][pipe_id]['C6plus_g']))*100.0 });
+			chart_data.push({ x: i++, y: (parseFloat(pdata_id[k][pipe_id]['iC5_g'])+parseFloat(pdata_id[k][pipe_id]['nC5_g'])+parseFloat(pdata_id[k][pipe_id]['C6plus_g']))*100.0 });
+		} else if( um == 'H2S_g' ) {
+			chart_data_sc.push({ x: i, y:parseFloat(scdata_id[k][pipe_id][um])*1000000.0 });
+			chart_data.push({ x: i++, y:parseFloat(pdata_id[k][pipe_id][um])*1000000.0 });
+		} else if( um == 'C2_g' || um == 'CO2_g' || um == 'N2_g') {
+			chart_data_sc.push({ x: i, y:parseFloat(scdata_id[k][pipe_id][um])*100.0 });
+			chart_data.push({ x: i++, y:parseFloat(pdata_id[k][pipe_id][um])*100.0 });
+		} else {
+			chart_data_sc.push({ x: i, y:parseFloat(scdata_id[k][pipe_id][um]) });
+			chart_data.push({ x: i++, y:parseFloat(pdata_id[k][pipe_id][um]) });
+			//console.log('DATA:' + chart_data_sc[k][pipe_id][um]);
+			if(um=='Pressure_N1') {
+				node2_data_sc.push({ x: j, y:parseFloat(scdata_id[k][pipe_id]['Pressure_N2']) });
+				node2_data.push({ x: j++, y:parseFloat(pdata_id[k][pipe_id]['Pressure_N2']) });
+			}
+		}
+		
+	});
+
+	//Empty Container 
+	$('#chart_pi svg').empty();
+	//Set Chart title
+	$('#chart_pi_title').html('<h3>'+pipe_name+' - ' + um_labels[um] + '</h3>');
+	//Draw Chart
+	nv.addGraph(function() {
+	  var chart = nv.models.lineChart()
+	                .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+	                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+	                .transitionDuration(350)  //how fast do you want the lines to transition?
+	                .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+	                .showYAxis(true)        //Show the y-axis
+	                .showXAxis(true)        //Show the x-axis
+	  ;
+
+	  chart.xAxis     //Chart x-axis settings
+	      .axisLabel('Hour');
+	      //.tickFormat(d3.format(',r'));
+	  chart.forceY([0]);
+	  
+	  //For gas .05f
+	  if(um=='C1_g' || um=='CO2_g' || um=='C5plus_g' || um=='C2_g' || um=='C5plus_g' || um=='N2_g') {
+	  	chart.yAxis.axisLabel(um_labels[um]).tickFormat(d3.format('.05f'));
+	  } else {
+	  	chart.yAxis     //Chart y-axis settings
+	      .axisLabel(um_labels[um])
+	      .tickFormat(d3.format('.02f'));
+	  }
+
+	  if(um=='Flow_g' || um=='Flow_cd') {
+	  	chart.yAxis     //Chart y-axis settings
+	      .axisLabel(um_labels[um])
+	      .tickFormat(d3.format('.0f'));
+	  }
+
+	  /* Done setting the chart up? Time to render it!*/
+	  var myData = [
+	    {
+	      values: chart_data_sc,      //values - represents the array of {x,y} data points
+	      key: 'actual:' + um, //key  - the name of the series.
+	      color: '#5DA5DA'  //color - optional: choose your own line color.
+	    },
+	    {
+	      values: chart_data,      //values - represents the array of {x,y} data points
+	      key: 'optimised:'+ um, //key  - the name of the series.
+	      color: '#ff7f00'  //color - optional: choose your own line color.
+	    }
+	  ];  
+	  
+	  if(um=='Pressure_N1') {
+	  	myData = [
+	    {
+	      values: chart_data_sc,      //values - represents the array of {x,y} data points
+	      key: 'actual:'+um, //key  - the name of the series.
+	      color: '#5DA5DA'  //color - optional: choose your own line color.
+	    },{
+	  		values: node2_data_sc,      //values - represents the array of {x,y} data points
+	      	key: 'actual:'+'Pressure_N2', //key  - the name of the series.
+	      	color: '#ff7f00'  //color - optional: choose your own line color.
+	  	},
+	  	{
+	      values: chart_data,      //values - represents the array of {x,y} data points
+	      key: 'optimised:'+um, //key  - the name of the series.
+	      color: '#60BD68'  //color - optional: choose your own line color.
+	    },{
+	  		values: node2_data,      //values - represents the array of {x,y} data points
+	      	key: 'optimised:'+'Pressure_N2', //key  - the name of the series.
+	      	color: '#440000'  //color - optional: choose your own line color.
+	  	}
+	  ];  
+	  }
+	  
+
+	  d3.select('#chart_pi svg')    //Select the <svg> element you want to render the chart in.   
+	      .datum(myData)         //Populate the <svg> element with chart data...
+	      .call(chart);          //Finally, render the chart!
+
+	  //Update the chart when window resizes.
+	  nv.utils.windowResize(function() { chart.update() });
+	  return chart;
+	});
+
+}
+
+
+/**
+ * Draws chart with accumulated (flow/condy)
+ * Parameters: pipe_name, type (g/cd)
+ */
+function chart_accumulated(id,um) {
+	//Prepare Data from pdata
+	var chart_data = []; 
+	var node2_data = []; 
+	var i=0; 
+	var j=0;
+	//Labels 
+	var um_labels = {'g':'Gas Flow [MMscf]', 'cd': 'Condy Flow [Bbls]'};
+
+	//Pipe Name
+	var pipe_id = id;
+	var pipe_name = netdata[id]['Node2'];
+	//Prepare Data
+	if(um=='g') {
+		hour=0;
+		Object.keys(accumulated_g).forEach(function(h){
+			chart_data.push({ x: hour++, y:accumulated_g[h][id] });
+		});
+	} else {
+		hour=0;
+		Object.keys(accumulated_cd).forEach(function(h){
+			chart_data.push({ x: hour++, y:accumulated_cd[h][id] });
+		});
+
+	}
+
+	//Empty Container 
+	$('#chart_acc svg').empty();
+	//Set Chart title
+	$('#chart_acc_title').html('<h3>Accumulated: '+pipe_name+' - ' + um_labels[um] + '</h3>');
+	//Draw Chart
+	nv.addGraph(function() {
+	  var chart = nv.models.lineChart()
+	                .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+	                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+	                .transitionDuration(350)  //how fast do you want the lines to transition?
+	                .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+	                .showYAxis(true)        //Show the y-axis
+	                .showXAxis(true)        //Show the x-axis
+	  ;
+
+	  chart.xAxis     //Chart x-axis settings
+	      .axisLabel('Hour');
+	      //.tickFormat(d3.format(',r'));
+
+	
+	  chart.yAxis     //Chart y-axis settings
+	      .axisLabel(um_labels[um])
+	      .tickFormat(d3.format('.0f'));
+
+	  var myData = [
+	    {
+	      values: chart_data,      //values - represents the array of {x,y} data points
+	      key: um, //key  - the name of the series.
+	      color: '#ff7f0e'  //color - optional: choose your own line color.
+	    }
+	  ];  
+	  
+
+	  d3.select('#chart_acc svg')    //Select the <svg> element you want to render the chart in.   
+	      .datum(myData)         //Populate the <svg> element with chart data...
+	      .call(chart);          //Finally, render the chart!
+
+	  //Update the chart when window resizes.
+	  nv.utils.windowResize(function() { chart.update() });
+	  return chart;
+	});
+
+}
+
+
+
+/**
+ * Draws the chart for the selected path
+ * Parameters: um
+ */
+function chart_path(um) {
+	//Prepare Data from pdata
+	var chart_data = []; 
+	var node2_data = []; 
+	var i=0; 
+	var j=0;
+	var um_labels = {'Flow_g':'Gas Flow [MMscf/d]', 'Flow_cd': 'Condy Flow [BPD]','Pressure_N1':'Pressure [barg]', 'Lpk_g':'Linepack Gas [MMscf]',
+		'Lpk_cd':'Inventory [bbls]', 'C2_g':'C2 [mole %]', 'CO2_g':'CO2 [mole %]', 'H2S_g':'H2S [ppmV]',
+		'C5plus_g':'C5+ [mole %]','N2_g':'N2 [mole %]', 'GHV': 'GHV [btu/scf]'
+		};
+
+	//Pipe Name
+	var path_name = $('#set_path_name').val();
+	if(path_hour==undefined) {
+		path_hour = Object.keys(sdata)[0];
+		$('#path_hour').html(format_date(path_hour));
+	}
+	var current_hour = path_hour;
+	path_um = um;	//var path_sample_data = [{x:'M3', y:20 }, {x:'M4', y:26 }, {x:'JINTAN', y:14 }];
+
+
+	//Empty Container 
+	$('#chart_path svg').empty();
+
+	nv.addGraph(function() {
+	    var chart = nv.models.multiBarChart()
+	      .margin({left: 100})
+	      .transitionDuration(350)
+	      .reduceXTicks(true)   //If 'false', every single x-axis tick label will be rendered.
+	      .rotateLabels(0)      //Angle to rotate x-axis labels.
+	      .showControls(false)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+	      .groupSpacing(0.1)    //Distance between each group of bars.
+	    ;
+
+	    chart.yAxis     //Chart x-axis settings
+      	.axisLabel(um_labels[path_um]);
+
+	    //chart.xAxis
+	    //    .tickFormat(d3.format(',f'));
+
+	    if(um=='C1_g' || um=='CO2_g' || um=='C5plus_g' || um=='C2_g' || um=='C5plus_g' || um=='N2_g') {
+	    	chart.yAxis.tickFormat(d3.format(',.6f'));
+	    }
+
+	    if(um=='Flow_g'|| um=='Flow_cd') {
+	    	chart.yAxis.tickFormat(d3.format(',.0f'));
+	    }
+	    
+
+	    chart.multibar.stacked(true);
+
+
+	    var myData = [
+	    {
+		      values: generate_path_points(path_name,current_hour,um),      //values - represents the array of {x,y} data points
+		      key: um, //key  - the name of the series.
+		      color: '#1f77b4'  //color - optional: choose your own line color.
+		    }
+		  ];  
+
+	    d3.select('#chart_path svg')
+	        .datum(myData)
+	        .call(chart);
+
+	    nv.utils.windowResize(chart.update);
+
+	    return chart;
+	});
+
+
+}
+
+/*
+ * Generate data for path chart
+ *
+ */
+function generate_path_points(path_name, hour, um) {
+	var myData = [];
+	Object.keys(path[path_name]).forEach(function(id){
+		var pipe_id = path[path_name][id];
+		var pipe = netdata[pipe_id]['Node1'] + ':' + netdata[pipe_id]['Node2'];
+		if(um=='C5plus_g') {
+			myData.push({x: pipe, y: (parseFloat(pdata_id[hour][pipe_id]['iC5_g']) + parseFloat(pdata_id[hour][pipe_id]['nC5_g']) + parseFloat(pdata_id[hour][pipe_id]['C6plus_g']))*100.0 });
+		} else if( um=='H2S_g' )  {
+			myData.push({x: pipe, y: parseFloat(pdata_id[hour][pipe_id][um])*1000000.0 });
+		} else if( um=='C2_g' || um == 'CO2_g' || um == 'N2_g' )  {
+			myData.push({x: pipe, y: parseFloat(pdata_id[hour][pipe_id][um])*100.0 });
+		} else {
+			myData.push({x: pipe, y: pdata_id[hour][pipe_id][um]});
+		}
+		
+	});
+
+	return myData;
+}
+
+
+//Calculate totals
+function calculate_scenario_totals() {
+	//Calculate totals for each hour in the scenario 
+	Object.keys(sdata).forEach(function(hour){
+		input_gas_flow = 0;
+		input_cond_flow = 0;
+		output_gas_flow = 0;
+		output_cond_flow = 0;
+		linepack_gas = 0;
+		linepack_cond = 0;
+		
+		Object.keys(netdata).forEach(function(i){
+			//Input Nodes
+			if(netdata[i]['Suply_offtke']==1) {
+				node = netdata[i]['Node1'];
+				if(ndata[hour][node]!=undefined) input_gas_flow += parseFloat(ndata[hour][node]['Flow_g']);
+				if(ndata[hour][node]!=undefined) input_cond_flow += parseFloat(ndata[hour][node]['Flow_cd']);
+			}
+			//Output Nodes 
+			if(netdata[i]['Suply_offtke']==2) {
+				node = netdata[i]['Node2'];
+				if(ndata[hour][node]!=undefined) output_gas_flow += parseFloat(ndata[hour][node]['Flow_g']);
+				if(ndata[hour][node]!=undefined) output_cond_flow += parseFloat(ndata[hour][node]['Flow_cd']);
+			}
+		});
+		
+		if(totals[hour]==undefined) totals[hour] = {};
+		totals[hour]['input_gas_flow'] = input_gas_flow;
+		totals[hour]['input_cond_flow'] = input_cond_flow;
+		totals[hour]['output_gas_flow'] = output_gas_flow;
+		totals[hour]['output_cond_flow'] = output_cond_flow;
+
+		//LPK - on pipe_segments
+		Object.keys(pdata_id[hour]).forEach(function(pipe_id){
+			linepack_gas  += parseFloat(pdata_id[hour][pipe_id]['Lpk_g']);
+			linepack_cond += parseFloat(pdata_id[hour][pipe_id]['Lpk_cd']);
+		});
+		totals[hour]['linepack_gas'] = linepack_gas;
+		totals[hour]['linepack_cond'] = linepack_cond;
+
+	});
+	
+}
+
+function advance_scenario(operation_type, offset) {
+	//0 = beginning, 1= step, 2=end 
+	if(scenario) {
+		if( operation_type==0 ) {
+			//Set the beginning
+			visualize_scenario(scenario_hours[0]);
+			return;
+		}
+
+		if( operation_type==2 ) {
+			visualize_scenario(scenario_hours[scenario_hours.length-1]);
+			return;
+		}
+
+		if( operation_type==1 ) {
+			var scenario_size = scenario_hours.length;
+			var current_index = $.inArray(selected_hour, scenario_hours);
+			var new_index = current_index + offset;
+			if(new_index < 0 ) {
+				visualize_scenario(scenario_hours[0]);
+				return;
+			}
+			if(new_index > scenario_size-1) {
+				return;
+			}
+			if(new_index < scenario_size ) {
+				visualize_scenario(scenario_hours[new_index]);
+				return;
+			}
+		}
+	}
+}
+
+function advance_path_hour(operation_type, offset) {
+
+	//0 = beginning, 1= step, 2=end 
+	if(scenario) {
+		if(path_hour==undefined) {
+			path_hour = Object.keys(sdata)[0];
+			$('#path_hour').html(path_hour);
+			if(path_um) chart_path(path_um);
+			return;
+		}
+		if( operation_type==0 ) {
+			//Set the beginning
+			path_hour = Object.keys(sdata)[0];
+			$('#path_hour').html(path_hour);
+			if(path_um) chart_path(path_um);
+			return;
+		}
+
+		if( operation_type==2 ) {
+			path_hour = scenario_hours[scenario_hours.length-1];
+			$('#path_hour').html(path_hour);
+			if(path_um) chart_path(path_um);
+			return;
+		}
+
+		if( operation_type == 1 ) {
+			var scenario_size = scenario_hours.length;
+			var current_index = $.inArray(path_hour, scenario_hours);
+			var new_index = current_index + offset;
+			if(new_index < 0 ) {
+				path_hour = scenario_hours[0];
+				$('#path_hour').html(path_hour);
+				if(path_um) chart_path(path_um);
+				return;
+			}
+			if(new_index > scenario_size-1) {
+				return;
+			}
+			if(new_index < scenario_size ) {
+				path_hour = scenario_hours[new_index];
+				$('#path_hour').html(path_hour);
+				if(path_um) chart_path(path_um);
+				return;
+			}
+		}
+	}
+}
+
+/*
+ *  Load a second scenario for comparison 
+ *
+ */
+
+ //To move 
+var scenario_2 = 0;
+var sdata_2 = [];
+var scdata_2 = [];
+var ndata_2 = [];
+var pdata_2 = [];
+var xdata_2 = [];
+//ID 
+var pdata_2_id = [];
+var scdata_2_id = [];
+
+function load_scenario_2() {
+	d3.tsv("/load_scenario2/" + scenario_filename_2, function(error, sd) {
+		if(error) alert('error loading scenario file:' + error);
+		//Clear variables
+		scenario_2 = 0;
+		sdata_2 = [];
+		scdata_2 = [];
+		ndata_2 = [];
+		pdata_2 = [];
+		xdata_2 = [];
+		//Load Scenario File
+		sd.forEach(function(d) {
+
+			//Add object to xdata
+			xdata_2.push(d);
+
+			//Build sdata 
+			if(d.Data_type == "1") {
+				if( sdata_2[d.Time_h] == undefined ) sdata_2[d.Time_h] = {};
+				if( sdata_2[d.Time_h][d.Node1] == undefined ) sdata_2[d.Time_h][d.Node1] = {};
+				sdata_2[d.Time_h][d.Node1]['[MMscf/d]'] = d.Flow_g;
+				sdata_2[d.Time_h][d.Node1]['[bar]'] = d.Pressure_N1;
+			}
+
+			//Build ndata
+			if(d.Data_type == "2") {
+				if( ndata_2[d.Time_h] == undefined ) ndata_2[d.Time_h] = {};
+				if( ndata_2[d.Time_h][d.Node1] == undefined ) ndata_2[d.Time_h][d.Node1] = {};
+				ndata_2[d.Time_h][d.Node1] = d;
+			}
+
+			if(d.Data_type == "2") {
+				//Node2
+				if( ndata_2[d.Time_h][d.Node2] == undefined ) {
+					ndata_2[d.Time_h][d.Node2] = {};
+					ndata_2[d.Time_h][d.Node2] = d;
+					ndata_2[d.Time_h][d.Node2]['Pressure_N1'] = d['Pressure_N2'];
+				}
+			}
+
+			//Build pdata
+			if(d.Data_type == "2") {
+				var pipe_name = d.Node1 + ':' + d.Node2;
+				if(pdata_2[d.Time_h] == undefined ) pdata_2[d.Time_h] = {};
+				if(pdata_2[d.Time_h][pipe_name] == undefined ) pdata_2[d.Time_h][pipe_name] = {};
+				pdata_2[d.Time_h][pipe_name] = d;
+
+				var pipe_id = d.No_pipe;
+				if(pdata_2_id[d.Time_h] == undefined ) pdata_2_id[d.Time_h] = {};
+				if(pdata_2_id[d.Time_h][pipe_id] == undefined ) pdata_2_id[d.Time_h][pipe_id] = {};
+				pdata_2_id[d.Time_h][pipe_id] = d;
+
+			}
+
+			//Build scdata - Scenario Data 
+			if(d.Data_type == "1") {
+				var pipe_name = d.Node1 + ':' + d.Node2;
+				if(scdata_2[d.Time_h] == undefined ) scdata_2[d.Time_h] = {};
+				if(scdata_2[d.Time_h][pipe_name] == undefined ) scdata_2[d.Time_h][pipe_name] = {};
+				scdata_2[d.Time_h][pipe_name] = d;
+
+				var pipe_id = d.No_pipe;
+				if(scdata_2_id[d.Time_h] == undefined ) scdata_2_id[d.Time_h] = {};
+				if(scdata_2_id[d.Time_h][pipe_id] == undefined ) scdata_2_id[d.Time_h][pipe_id] = {};
+				scdata_2_id[d.Time_h][pipe_id] = d;
+			}
+
+    	});
+
+
+		//Set scenario, update Labels
+		scenario_2 = 1;
+	
+		$('#scenario2_name').html(scenario_filename_2);
+		//Add Pipes Table 
+		show_comparison_tables();
+	});
+
+}
+
+/*
+ *
+ */
+function show_comparison_tables() {
+
+	var compare_nodes_data = [];
+	var compare_pipes_data = [];
+	var hours_scenario_1 =  Object.keys(pdata_id).length;
+	var hours_scenario_2 =  Object.keys(pdata_2_id).length;
+
+	Object.keys(compare_nodes_id).forEach(function(idx){
+		//Total - Scenario 1
+		var pipe_id = compare_nodes_id[idx];
+		var flow_g = 0;
+		var flow_g_2 = 0;
+		Object.keys(pdata_id).forEach(function(i){
+			if(pdata_id[i][pipe_id]!=undefined) flow_g 		+= parseFloat(pdata_id[i][pipe_id]['Flow_g'])/hours_scenario_1;
+		});
+		Object.keys(pdata_2_id).forEach(function(i){
+			if(pdata_2_id[i][pipe_id]!=undefined) flow_g_2 		+= parseFloat(pdata_2_id[i][pipe_id]['Flow_g'])/hours_scenario_2;
+		});
+
+		var delta = flow_g_2 - flow_g;
+		compare_nodes_data[compare_nodes_id[idx]] = {1: flow_g, 2: flow_g_2, 3: delta };
+
+	});
+
+	//Compare_pipes
+	Object.keys(compare_pipes_id).forEach(function(idx){
+		var pipe_id = compare_pipes_id[idx];
+		var flow_g = 0;
+		var flow_g_2 = 0;
+		Object.keys(pdata_id).forEach(function(i){
+			if(pdata_id[i][pipe_id]!=undefined) flow_g 		+= parseFloat(pdata_id[i][pipe_id]['Flow_g'])/hours_scenario_1;
+		});
+		Object.keys(pdata_2_id).forEach(function(i){
+			if(pdata_2_id[i][pipe_id]!=undefined) flow_g_2 		+= parseFloat(pdata_2_id[i][pipe_id]['Flow_g'])/hours_scenario_2;
+		});
+
+		var delta = flow_g_2 - flow_g;
+		compare_pipes_data[compare_pipes_id[idx]] = {1: flow_g, 2: flow_g_2, 3: delta };
+
+	});
+
+	//Display data 
+	var tableHtml = '<table id="comp1" class="table table-condensed table-hover"><caption>ENTRY POINTS</caption><thead><tr><th>Name</th><th>' + scenario_filename + '</th><th>' + scenario_filename_2 + '</th><th>Differences</th></tr></thead>';
+	Object.keys(compare_nodes_data).forEach(function(i){
+		var pipe_name = netdata[i]['Node1'] + ':' + netdata[i]['Node2'];
+		tableHtml += '<tr><td>' + pipe_name + '</td><td>' + parseFloat(compare_nodes_data[i]['1']).toFixed(2) + '</td><td>' + parseFloat(compare_nodes_data[i]['2']).toFixed(2) + '</td><td>' + parseFloat(compare_nodes_data[i]['3']).toFixed(2) + '</td></tr>';
+	});
+	tableHtml += '</table>';
+	$('#compare-nodes-table').html(tableHtml);
+
+
+	//Display data 
+	tableHtml = '<table id="comp1" class="table table-condensed table-hover"><caption>EXIT POINTS</caption><thead><tr><th>Name</th><th>' + scenario_filename + '</th><th>' + scenario_filename_2 + '</th><th>Differences</th></tr></thead>';
+	Object.keys(compare_pipes_data).forEach(function(i){
+		var pipe_name = netdata[i]['Node1'] + ':' + netdata[i]['Node2'];
+		tableHtml += '<tr><td>' + pipe_name + '</td><td>' + parseFloat(compare_pipes_data[i]['1']).toFixed(2) + '</td><td>' + parseFloat(compare_pipes_data[i]['2']).toFixed(2) + '</td><td>' + parseFloat(compare_pipes_data[i]['3']).toFixed(2) + '</td></tr>';
+	});
+	tableHtml += '</table>';
+	$('#compare-pipes-table').html(tableHtml);
+}
+
+/**
+ * Draws a chart 
+ * Parameters: um: Flow_g / Flow_cd, 
+ */
+/*
+function compare_chart(um) {
+	//Prepare Data from pdata
+	var entry_data = [];
+	var entry_data_2 = [];
+	var exit_data = [];
+	var exit_data_2 = [];
+
+	//Prepare data for scenario 1
+	var i=0;
+	Object.keys(pdata_id).forEach(function(hr){
+		var total = 0;
+		Object.keys(compare_nodes_id).forEach(function(idx){
+			var pipe = compare_nodes_id[idx];
+			var pipe_name = netdata[pipe]['Node1'] + ':' + netdata[pipe]['Node2'];
+			if(pdata_id[hr][pipe]!= undefined) total += parseFloat(pdata_id[hr][pipe][um]);
+		});
+		entry_data.push({ x: i, y:total });
+
+		total = 0;
+		Object.keys(compare_pipes_id).forEach(function(idx){
+			var pipe = compare_pipes_id[idx];
+			var pipe_name = netdata[pipe]['Node1'] + ':' + netdata[pipe]['Node2'];
+			if(pdata_id[hr][pipe]!= undefined) total += parseFloat(pdata_id[hr][pipe][um]);
+		});
+		exit_data.push({ x: i, y:total });
+
+		i++;
+	});
+
+	//Prepare data for scenario 2
+	var i=0;
+	Object.keys(pdata_2_id).forEach(function(hr){
+		var total = 0;
+		Object.keys(compare_nodes_id).forEach(function(idx){
+			var pipe = compare_nodes_id[idx];
+			var pipe_name = netdata[pipe]['Node1'] + ':' + netdata[pipe]['Node2'];
+			if(pdata_2_id[hr][pipe]!= undefined) total += parseFloat(pdata_2_id[hr][pipe][um]);
+		});
+		entry_data_2.push({ x: i, y:total });
+
+		total = 0;
+		Object.keys(compare_pipes_id).forEach(function(idx){
+			var pipe = compare_pipes_id[idx];
+			var pipe_name = netdata[pipe]['Node1'] + ':' + netdata[pipe]['Node2'];
+			if(pdata_2_id[hr][pipe]!= undefined) total += parseFloat(pdata_2_id[hr][pipe][um]);
+		});
+		exit_data_2.push({ x: i, y:total });
+
+		i++;
+	});
+
+	//Empty Container 
+	$('#chart_comp svg').empty();
+
+	//Draw Chart
+	nv.addGraph(function() {
+	  var chart = nv.models.lineChart()
+	                .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+	                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+	                .transitionDuration(350)  //how fast do you want the lines to transition?
+	                .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+	                .showYAxis(true)        //Show the y-axis
+	                .showXAxis(true)        //Show the x-axis
+	  ;
+
+	  chart.xAxis     //Chart x-axis settings
+	      .axisLabel('Hour');
+	      //.tickFormat(d3.format(',r'));
+	  
+	  	chart.yAxis     //Chart y-axis settings
+	      .axisLabel(um)
+	      .tickFormat(d3.format('.1f'));
+
+	  chart.forceY([0]);
+
+	  var myData = [
+	    {
+	      values: entry_data,      //values - represents the array of {x,y} data points
+	      key: 'Input ' + scenario_filename, //key  - the name of the series.
+	      color: '#ff7f0e'  //color - optional: choose your own line color.
+	    },
+	    {
+	      values: exit_data,      //values - represents the array of {x,y} data points
+	      key: 'Output ' + scenario_filename, //key  - the name of the series.
+	      color: '#008c00'  //color - optional: choose your own line color.
+	    },
+	  ];  
+	  if(scenario_filename_2) {
+	  	myData.push({
+	  		values: entry_data_2,      //values - represents the array of {x,y} data points
+		    key: 'Input ' + scenario_filename_2, //key  - the name of the series.
+		    color: '#b02b2c'  //color - optional: choose your own line color.
+	  	});
+	  	myData.push({
+	  		values: exit_data_2,      //values - represents the array of {x,y} data points
+		    key: 'Output ' + scenario_filename_2, //key  - the name of the series.
+		    color: '#356aa0'  //color - optional: choose your own line color.
+	  	});
+	  }
+
+	  xxx = myData;
+
+	  d3.select('#chart_comp svg')    //Select the <svg> element you want to render the chart in.   
+	      .datum(myData)         //Populate the <svg> element with chart data...
+	      .call(chart);          //Finally, render the chart!
+
+	  //Update the chart when window resizes.
+	  nv.utils.windowResize(function() { chart.update() });
+	  return chart;
+	});
+
+}
+*/
+
+function run_scenario() {
+	$('#loading').html('Please wait... Simulation Model is running...');
+	$.ajax({
+		url: '/run_scenario2/' + scenario_filename,
+		type: 'GET',
+		//data: {scenario: scenario_filename},
+		success: function(result) {
+			if(result==0) {
+				$('#loading').html('');
+				alert('Run Finished! The Scenario will be reloaded.');
+				$('#btn_save_results').removeClass('disabled');
+				load_scenario();
+			} else {
+				$('#loading').html('');
+				alert('An error has occured. Error code:' + result);
+
+			}
+			
+		}
+	});
+}
+
+function set_properties() {
+	if(scenario_filename=='') {
+		alert('Please open a scenario first!');
+		return;
+	}
+	//Set the initialization data for the scenario, i.e. the data for the last hour of the chosen scenario 
+		$.ajax({url:"/db_list_init_scenarios",success:function(result){
+				var scenario_size = Object.keys(scdata_id).length;
+				//Bootbox selection
+				//<input type="checkbox" name="vehicle" value="Bike">I have a bike<br>
+		    	//console.log(result);
+	            bootbox.dialog({
+	            title: "Edit Scenario Properties",
+	            message: '<div class="row">  ' +
+	                '<div class="col-md-12"> ' +
+	                '<form class="form-horizontal"> ' +
+	                '<div class="form-group"> ' +
+	                '<label class="col-md-4 control-label" for="name">'+ 'Initial Scenario:' +'</label> ' +
+	                '<div class="col-md-4"> ' +
+	                result +
+	                '</div> ' +
+	                '</div> ' +
+	                '</form> </div>  </div>'+
+                    '<div class="row">  ' +
+                    '<div class="col-md-12"> ' +
+                    '<form class="form-horizontal"> ' +
+                    '<div class="form-group"> ' +
+                    '<label class="col-md-4 control-label" for="start_date">'+ 'Start Date' +'</label> ' +
+                    '<div class="col-md-4"> ' +
+                    '<input id="start_date" name="name" type="text" placeholder="" class="form-control input-md" value="' + start_date + '"> ' +
+                    '<span class="help-block"></span> </div> ' +
+                    '</div> ' +
+                    '</form> </div>  </div>' +
+                    '<div class="row">  ' +
+                    '<div class="col-md-12"> ' +
+                    '<form class="form-horizontal"> ' +
+                    '<div class="form-group"> ' +
+                    '<label class="col-md-4 control-label" for="scenario_length">'+ 'Scenario hours:' +'</label> ' +
+                    '<div class="col-md-4"> ' +
+                    '<input id="scenario_length" name="name" type="text" placeholder="" class="form-control input-md" value="' + scenario_size + '"> ' +
+                    '<span class="help-block"></span> </div> ' +
+                    '</div> ' +
+                    '</form> </div>  </div>' +
+                    '<div class="row">  ' +
+                    '<div class="col-md-12"> ' +
+                    '<form class="form-horizontal"> ' +
+                    '<div class="form-group"> ' +
+                    '<label class="col-md-4 control-label" for="scenario_comments">'+ 'Description:' +'</label> ' +
+                    '<div class="col-md-4"> ' +
+                    '<input id="scenario_comments" name="name" type="text" placeholder="" class="form-control input-md" value="' + scenario_comments + '"> ' +
+                    '<span class="help-block"></span> </div> ' +
+                    '</div> ' +
+                    '</form> </div>  </div>',
+	            buttons: {
+	                success: {
+	                    label: "Set",
+	                    className: "btn-success",
+	                    callback: function () {
+	                    	//Load the scenario and store the data for the last hour 
+	                        var scenario_filename_txt = $('#filename option:selected').val() + '.txt';
+	                        init_scenario_filename = scenario_filename_txt.substring(0,scenario_filename_txt.length-4);
+	                        console.log("id:" + init_scenario_filename);
+	            
+	                        //Apply Date /Comments changes
+	                        var new_scenario_date = $('#start_date').val();
+	                        console.log(new_scenario_date);
+	                        var new_scenario_length = $('#scenario_length').val();
+	                        scenario_comments = $('#scenario_comments').val();
+	                        console.log(scenario_comments);
+	                        //If there was a change in date/time, apply it
+	                        if(new_scenario_date!=start_date || new_scenario_length!=scenario_size) {
+	                        	//Re-create scdata
+	                        	var new_scdata_id = [];
+	                        	var d = {};
+	                        	var idx=0;
+	                        	var dt = new Date(new_scenario_date + ' 00:00');
+	                        	Object.keys(scdata_id).forEach(function(hr){
+	                        		var key = dt.toLocaleDateString("en-US",{year:"numeric", month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit", hour12:false});
+	                        		//console.log(key);
+	                        		key = key.substr(0,10) + ' ' + key.substr(12,5);
+	                        		//console.log(key);
+	                        		if(idx < new_scenario_length) {
+	                        			new_scdata_id[key] = scdata_id[hr];
+	                        			d = scdata_id[hr];
+	                        			idx++;
+	                        		}
+	                        		dt.setHours(dt.getHours()+1);
+	                        	});
+	                        	//Fill in 
+	                        	if(idx<new_scenario_length) {
+	                        		for (i = idx; i < new_scenario_length; i++) { 
+	                        			var key = dt.toLocaleDateString("en-US",{year:"numeric", month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit", hour12:false});
+		                        		key = key.substr(0,10) + ' ' + key.substr(12,5);
+										new_scdata_id[key] = d;
+										dt.setHours(dt.getHours()+1);
+									}
+	                        	}
+	                        	//Replace scdata 
+	                        	scdata_id = new_scdata_id;
+	                        	scenario_hours = Object.keys(scdata_id);
+								calculate_scenario_hours();
+	                        	//Fix Time_h
+	                        	//Object.keys(scdata).forEach()
+	                        	add_pipes_table();
+	                        }
+	                        $('#loading').html('LOADING INIT SCENARIO...');
+	                        //Set the init data
+	                        $.ajax({
+	                        	type: "GET",
+	                        	url: "/db_load_scenario/" + init_scenario_filename, 
+	                        	//data: {scenario_filename: new_scenario, scenario_data: serialize_scenario2() },
+	                        	success: function(data) { 
+	                        		//console.log(data);  
+	                        		console.log('Loading init scenario:' + init_scenario_filename);
+	                        		
+	                        		load_init_scenario();
+	                        	}
+	                        });
+	                        
+
+	                    }
+	                }
+	            }
+	        }
+	    );
+		//End of success function
+
+  	}});
+}
+
+/**
+ * Loads the initialization scenario data 
+ * If adjust_init == 1 => Apply transformations to existing init data and use it
+ */
+function load_init_scenario() {
+	xdata_init 				= [];
+	xdata_init_selection 	= [];
+	xinit_node_pressure  	= [];
+
+	d3.tsv("/load_scenario2/" + init_scenario_filename, function(error, sd) {
+		if(error) alert('error loading init scenario file:' + error);
+		console.log('Init Scenario Loaded...');
+		//Clear variables
+		var time_index = [];
+		//Load Scenario File
+		adjust_init = 0;
+
+		if(adjust_init==1) {
+			
+
+			sd.forEach(function(d) {
+
+				//Take the 0 data and apply transformations
+				if(d.Data_type == "0") {
+						xdata_init_selection.push(d);
+						xinit_node_pressure[d['Node1']] = d['Pressure_N1'];
+				}
+
+	    	});
+	    	//Process Nodes
+	    	Object.keys(xdata_init_selection).forEach(function(i){
+	    		var d = xdata_init_selection[i];
+	    		var id = d['Object_id'];
+	    		var base_pressure = parseFloat(xinit_node_pressure[ netdata[id]['Node1'] ]);
+	    		xdata_init_selection[i]['Pressure_N1'] = base_pressure * parseFloat(netdata[id]['Proc_p1']);
+	    		xdata_init_selection[i]['Pressure_N2'] = base_pressure * parseFloat(netdata[id]['Proc_p2']);
+	    		xdata_init_selection[i]['Lpk_g'] = base_pressure * parseFloat(netdata[id]['Proc_lpg']);
+	    		xdata_init_selection[i]['Lpk_cd'] = base_pressure * parseFloat(netdata[id]['Proc_lpcd']);
+
+	    	});
+	    	/*
+	    	xdata_init_selection.forEach(function(d){
+	    		var id = d['Object_id'];
+	    		var base_pressure = parseFloat(xinit_node_pressure[ netdata[id]['Node1'] ]);
+
+	    		xdata_init_selection['Pressure_N1'] = base_pressure * parseFloat(netdata[id]['Proc_p1']);
+	    		xdata_init_selection['Pressure_N2'] = base_pressure * parseFloat(netdata[id]['Proc_p2']);
+	    		xdata_init_selection['Lpk_g'] = base_pressure * parseFloat(netdata[id]['Proc_lpg']);
+	    		xdata_init_selection['Lpk_cd'] = base_pressure * parseFloat(netdata[id]['Proc_lpcd']);
+
+	    	});
+			*/
+			
+
+		} else {
+
+			sd.forEach(function(d) {
+
+				if(d.Data_type == "2") {
+					xdata_init.push(d);
+					if( time_index[d.Time_h] == undefined ) time_index[d.Time_h] = {};
+				}
+
+	    	});
+
+			//Get the last time
+			var last_time = Object.keys(time_index)[Object.keys(time_index).length-1];
+			console.log('Init time:' + last_time);
+
+			xdata_init.forEach(function(d){
+				if(d.Time_h==last_time) {
+					xdata_init_selection.push(d);
+				} 
+				
+			});
+
+			xdata_init_selection.forEach(function(d){
+				xinit_node_pressure[d['Node1']] = d['Pressure_N1'];
+			});
+
+		}
+		
+
+	});
+	$('#loading').empty();
+	//Enable Adjust Initial Data Button
+	$('#adjust_init_button').removeClass('disabled');
+
+}
+
+//Load nominations
+function db_load_nominations() {
+	var nnodes = ["14","15","5","6","56","11","10","18","9","53","1","2","67","68","101","102","103","104","105","113","114","115","110","108","109","155","170","212","269","163","167","75","180","264","73","77","118","119","120","121","122","201","202","204","205","207","208","266"];
+	d3.tsv("/db_list_nominations", function(error, sd) {
+		if(error) alert('error loading init scenario file:' + error);
+		console.log('DB Nominations Loaded...');
+		//Load Scenario File
+		sd.forEach(function(d) {
+			var day = d['data'];
+			var shortday = day.substr(5,2) + '' + day.substr(8,2) + '' +  day.substr(0,4);
+				nnodes.forEach(function(n){
+					//console.log('nom_'+shortday+'_'+n + '  :  '+d[n]);
+					$('#nom_'+shortday+'_'+n).val(parseFloat(d[n]).toFixed(0));
+				});
+
+			
+			
+    	});
+    	change_nomination();
+    	alert('Availability loaded!');
+
+	});
+}
+
+function change_nomination() {
+	$('#apply_nominations_button').removeClass('btn-default').addClass('btn-danger');
+}
+
+
+
+function update_chartpipe_dropdown() {
+	var pipe_type = $('#set_pipe_type').val();
+	//Update dropdown
+	$('#set_pipe_name').empty();
+		$.each(Object.keys(pdata_id[selected_hour]), function(key, id) {   
+			var pipe_name = '';
+			if(pipe_type==4) {
+				pipe_name = pdata_id[selected_hour][id]['Node2']; 
+			} else {
+				pipe_name = pdata_id[selected_hour][id]['Node1'];
+			}
+			if(netdata[id]['Chart_tab']==pipe_type) {
+				$('#set_pipe_name')
+		         .append($("<option></option>")
+		         .attr("value",id)
+		         .text(pipe_name));
+			}
+		      
+		});
+
+}
+
+
+
+/**
+ *  Populates the dropdown Actual vs Optimisation
+ *
+ */
+
+function update_chartpipe_opt_dropdown() {
+	//Update dropdown
+	$('#set_pi_id').empty();
+		$.each(Object.keys(pdata_id[selected_hour]), function(key, id) {   
+			var pipe_name = '';
+			var pipe_type = netdata[id]['Suply_offtke'];
+			if(pipe_type==1) {
+				pipe_name = pdata_id[selected_hour][id]['Node1']; 
+			} else {
+				pipe_name = pdata_id[selected_hour][id]['Node2'];
+			}
+			if(pipe_type==1 || pipe_type==2) {
+				$('#set_pi_id')
+		         .append($("<option></option>")
+		         .attr("value",id)
+		         .text(pipe_name));
+			}
+		      
+		});
+
+}
+
+</script>
+</body>
+

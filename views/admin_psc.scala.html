@@ -1,0 +1,117 @@
+@(message: String)
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="/assets/javascripts/jquery.min.js"></script>
+<script src="/assets/javascripts/d3.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="/assets/stylesheets/bootstrap.min.css">
+<link rel="stylesheet" href="/assets/stylesheets/bootstrap-xl.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="/assets/stylesheets/bootstrap-theme.min.css">
+
+<!-- Netview CSS -->
+<link rel="stylesheet" href="/assets/stylesheets/netview.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="/assets/javascripts/bootstrap.min.js"></script>
+
+<!-- Bootbox -->
+<script src="/assets/javascripts/bootbox.min.js"></script>
+
+<!-- D3 tip -->
+<script src="/assets/javascripts/d3-tip.js"></script>
+
+<!-- D3 Context Menu -->
+<script src="/assets/javascripts/d3-context-menu.js"></script>
+<link rel="stylesheet" href="/assets/stylesheets/d3-context-menu.css">
+
+<!-- NVD3.js -->
+<link rel="stylesheet" href="/assets/nvd3/nv.d3.css">
+<script src="/assets/nvd3/nv.d3.js"></script>
+
+<!-- Data Tables -->
+<link rel="stylesheet" href="/assets/stylesheets/jquery.dataTables.css">
+<script src="/assets/javascripts/jquery.dataTables.min.js"></script>
+<script src="/assets/javascripts/jquery.stickytableheaders.min.js"></script>
+
+<!-- Main.js -->
+<script src="/assets/javascripts/main.js"></script>
+
+
+<body>
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">IGBO ADMIN</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="/admin_field">Field</a></li>
+            <li class="active"><a href="/admin_psc">PSC</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+<div class="container" style="padding-top: 60px">
+	<!-- Control Area -->
+	Manage PSC Table
+	<br/>
+	<div class="row">
+        <div class="col-md-12">
+        	<button id="btn_new" type="button" class="btn btn-primary btn-xs" onclick="alert('Not Implemented!');">New</button>
+        	<span id="loading"></span>
+        </div>
+	</div>
+
+	<br/>
+	<!-- Table -->
+	<div id="data_table"></div>
+
+</div>
+
+<script>
+/*
+$('#loading').html('LOADING DATA...');
+//Set the init data
+$.ajax({
+	type: "GET",
+	url: "/db_admin_field_list/", 
+	success: function(data) { 
+		//console.log(data);  
+		console.log('Loading field ready');
+		
+		//Display table
+	}
+});
+//"id_field\tobject_id\tfield\tmin\tmax\n"
+*/
+
+
+d3.tsv("/db_admin_psc_list", function(error, sd) {
+		if(error) alert('error loading field table' + error);
+		//Clear variables
+		//Load Scenario File
+		var tableHtml = '<table id="field-table" class="table table-condensed table-hover"><thead><tr><th>ID</th><th>PSC</th></tr></thead><tfoot><tr><th>ID</th><th>PSC</th></tr></tfoot>';
+		sd.forEach(function(d) { 
+			tableHtml += '<tr><td>' + d.id_psc + '</td><td>' + d.psc + '</td></tr>';
+		});
+		tableHtml += '</table>';
+		$('#data_table').html(tableHtml);
+		$('#field-table').DataTable();
+});		
+</script>
+
+</body>
+

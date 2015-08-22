@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Balotesti</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/dhtmlx/dhtmlx.css")"/>
+  <script src="@routes.Assets.at("javascripts/dhtmlx/dhtmlx.js")"></script>
+  <style>
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+    background-color: #ebebeb;
+    overflow: hidden;
+  }
+  </style>
+  <script>
+  var main_layout, dhxWin, menu_1, cgrid, w1, main, details_tabbar;
+  var client_id;
+
+  function doOnLoad() {
+
+    dhtmlx.image_path='@routes.Assets.at("stylesheets/dhtmlx/imgs/")';
+    main_layout = new dhtmlXLayoutObject(document.body, '2U');
+    var meniu = main_layout.cells('a');
+    meniu.setText('Meniu');
+    meniu.setWidth('200');
+
+    main = main_layout.cells('b');
+    main.setText('Main');
+    menu_1 = main.attachMenu();
+    menu_1.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")');
+    menu_1.loadStruct('@routes.Assets.at("xml/menu.xml")');
+
+    //sidebar meniu
+    var sidebar = meniu.attachSidebar({
+      template: "text",
+      items: [
+        {
+          id: "users_sidebar_link",
+          text: "Utilizatori"
+        },
+        {
+          id: "clients_sidebar_link",
+          text: "Clienti",
+          selected: true
+        },
+        {
+          id: "nomenclatura_sidebar_link",
+          text: "Nomenclatura"
+        }
+      ]
+    });
+    sidebar.attachEvent('onSelect', function(id, lastId){
+      var url = '';
+      switch(id) {
+        case 'users_sidebar_link':
+        url = '@routes.User.users';
+        break;
+        case 'clients_sidebar_link':
+        url = '@routes.Client.cindex';
+        break;
+        case 'nomenclatura_sidebar_link':
+        url = '@routes.Nomenclatura.index';
+        break;
+        default:
+        break;
+      }
+      window.location = url
+    })
+
+    //add event on main menu
+    menu_1.attachEvent("onClick", mainAction)
+
+    //context menu
+    myMenu = new dhtmlXMenuObject();
+    myMenu.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")');
+
+    myMenu.addNewChild(myMenu.topId,0, "edit", "Editeaza", false, "page_setup.gif");
+    myMenu.addNewChild(myMenu.topId,1, "sterg", "Sterge", false, "close.gif");
+
+    myMenu.renderAsContextMenu();
+    myMenu.attachEvent("onClick",onButtonClick);
+
+    //create window generator
+    dhxWin = new dhtmlXWindows();
+
+    //create new window
+    w1 = dhxWin.createWindow("w1", 20, 30, 320, 300);
+    w1.hide();
+
+    w1.setText("Editare date");
+    w1.center();
+
+    //client grid
+    cgrid = main.attachGrid();
+    cgrid.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/")');
+
+    cgrid.setHeader(["ID", "Nume", "Prenume", "Cod Client", "Email", "Telefon", "Tip"]);
+    cgrid.setColTypes("ro,ro,ro,ro,ro,ro,ro");
+
+    cgrid.setColSorting("int,str,str,str,str,str,str");
+    cgrid.setInitWidths("50,*,*,*,*,*,*");
+
+    cgrid.enableContextMenu(myMenu);
+
+    cgrid.init();
+
+    cgrid.attachFooter(["<div id='grid_2_recinfoArea' style='width:100%;height:100%'></div>","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan","#cspan"],['height:25px;text-align:left;background:transparent;border-color:white;padding:0px;']);
+    cgrid.enablePaging(true, 10,  3,'grid_2_recinfoArea');
+    cgrid.setPagingSkin('toolbar','dhx_skyblue');
+
+    cgrid.load('@routes.Client.listgrid', 'json');
+
+    cgrid.attachEvent("onRowDblClicked", function(rId,cInd){ client_id = rId; clientDetails(); });
+
+    //on close window, refresh grid
+    dhxWin.attachEvent("onClose", function(w1){
+      cgrid.load('@routes.Client.listgrid', 'json');
+      w1.hide();
+    });
+  }
+
+
+  function doOnUnload() {
+    if (dhxWin != null && dhxWin.unload != null) {
+      dhxWin.unload();
+      dhxWin = w1 = null;
+    }
+  }
+
+
+  function onButtonClick(menuitemId,type){
+
+    var data = cgrid.contextID.split("_"); //rowId_colInd
+    var clientid = data[0];
+    console.log(data[0]);
+
+    if(menuitemId=="edit"){
+      w1.show();
+    }
+
+    if(menuitemId=="sterg"){
+
+      dhtmlx.confirm({
+        title: "Sterge linia",
+        type: "confirm",
+        text: "Sunteti sigur ca doriti sa stergeti inregistrarea curenta?",
+        callback: function(){
+
+          //alert("Sterge linia!");
+          window.dhx4.ajax.get("@routes.Client.deletecl?id="+clientid, function(r) {
+            var response = JSON.parse(r)
+            cgrid.load('@routes.Client.listgrid', 'json');
+            dhtmlx.message({
+              text: response
+            })
+          });
+        }
+
+      });
+
+    }
+
+
+    form = w1.attachForm();
+    form.loadStruct("@routes.Client.editclient?id="+clientid);
+
+    //save form data
+    form.attachEvent("onButtonClick",function(id){
+
+      form.send("@routes.Client.saveclient", "post", function(loader, response){
+        dhtmlx.message({
+          text: response
+        })
+
+      });
+    });
+
+  }
+
+
+  //function for add new client
+  function  mainAction(menuitemId,type){
+
+    if(menuitemId=="new"){
+
+
+      form = w1.attachForm();
+      form.loadStruct("@routes.Client.editclient?id=0");
+
+
+      //save form data
+      form.attachEvent("onButtonClick",function(id){
+
+        form.send("@routes.Client.saveclient", "post", function(loader, response){
+          dhtmlx.message({
+            text: response
+          })
+
+        });
+      });
+
+      w1.setText("Adauga client Nou!");
+      w1.show();
+    }
+  }
+
+  //detalii client (adresa, contract, consum)
+  function clientDetails() {
+    var firstShow = main_layout.cells("b").showView("details");
+    if(firstShow) {
+      //toolbar details
+      var toolbar_details = main.attachToolbar({
+        icon_path: '@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")',
+        xml: '@routes.Assets.at("xml/toolbar_details.xml")',
+        onClick: function(id) {
+          detailsMenuAction(client_id, id);
+        }
+      });
+
+      //cream un tabbar cu 3 taburi (adrese, contracte, consum)
+      details_tabbar = main.attachTabbar({
+        mode: 'top',
+        align: 'left',
+        tabs: [
+          {id: "a_tab", text: "Adrese", active: true},
+          {id: "ct_tab", text: "Contracte"},
+          {id: "co_tab", text: "Consum"}
+        ]
+      });
+
+      //setare text header celula b si afisare header
+      window.dhx4.ajax.get("@routes.Client.clientDenumire?client_id="+client_id, function(r) {
+        var res = window.dhx4.s2j(r.xmlDoc.responseText);
+        main.setText("Inforamtii client: " + res.nume + " " + res.prenume);
+      })
+      main.showHeader();
+
+      //BEGIN ADRESA
+      //gridul Adresa
+      var adresa_tab = details_tabbar.cells('a_tab');
+
+      var adgrid = adresa_tab.attachGrid();
+      adgrid.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/")');
+      adgrid.setHeader(["ID", "Tip", "Strada", "Numar", "Bl", "Sc", "Ap", "Et", "Observatii"]);
+      adgrid.setColTypes("ro,ro,ro,ro,ro,ro,ro,ro,ro");
+      adgrid.setColSorting('int,str,str,str,str,str,str,str,str');
+      adgrid.setInitWidths('50,*,*,*,*,*,*,*,*');
+      adgrid.init();
+
+      //window adresa
+      w_ad = dhxWin.createWindow("w_ad", 20, 30, 250, 400);
+      w_ad.hide();
+      w_ad.setText("Editare date adresa");
+      w_ad.center();
+
+      //END ADRESA
+
+      //BEGIN CONTRACT
+      //gridul Contract
+      var contract_tab = details_tabbar.cells('ct_tab');
+
+      var ctgrid = contract_tab.attachGrid();
+      ctgrid.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/")');
+      ctgrid.setHeader(["ID","Numar","Data"]);
+      ctgrid.setColTypes("ro,ro,ro");
+      ctgrid.setColSorting('int,str,date');
+      ctgrid.setInitWidths('*,*,*');
+      ctgrid.init();
+      ctgrid.load('@routes.Client.listGridContract?id_client=' + client_id, 'js');
+
+      //context menu contract
+      var m_context_ct = new dhtmlXMenuObject();
+      m_context_ct.setIconsPath('@routes.Assets.at("stylesheets/dhtmlx/imgs/imgs/")');
+      m_context_ct.addNewChild(m_context_ct.topId,0, "edit_contract", "Editeaza", false, "page_setup.gif");
+      m_context_ct.addNewChild(m_context_ct.topId,1, "sterg_contact", "Sterge", false, "close.gif");
+      m_context_ct.renderAsContextMenu();
+      m_context_ct.attachEvent("onClick",function(id,zoneId,cas) { contextMenuContract(id, client_id);});
+
+      ctgrid.enableContextMenu(m_context_ct);
+
+      //window Contract
+      w_ct = dhxWin.createWindow("w_ct", 20, 30, 250, 150);
+      w_ct.hide();
+      w_ct.setText("Editare date contract");
+      w_ct.center();
+      //END CONTRACT
+    } else {
+      window.dhx4.ajax.get("@routes.Client.clientDenumire?client_id="+client_id, function(r) {
+        var res = window.dhx4.s2j(r.xmlDoc.responseText);
+        main.setText("Informatii client: " + res.nume + " " + res.prenume);
+      })
+
+      var ctgrid = details_tabbar.cells("ct_tab").getAttachedObject();
+      ctgrid.clearAndLoad('@routes.Client.listGridContract?id_client=' + client_id, 'js')
+    }
+  }
+
+  //action meniu detalii
+  function detailsMenuAction(client_id, menu_item_id) {
+    switch(menu_item_id) {
+      case 'list_client' :
+        // window.location = '@routes.Client.cindex';
+        main_layout.cells("b").showView("def");
+        main.setText("Main");
+        break;
+      case 'add_adresa' :
+        addNewAdresa(client_id);
+        break;
+      case 'add_contract' :
+        //adaugare contract nou
+        addNewContract(client_id);
+      default :
+      return false;
+    }
+  }
+
+  //action adauga adresa nou
+  function addNewAdresa(client_id) {
+    var w = dhxWin.window("w_ad");
+    var form = w.attachForm();
+    form.loadStruct("@routes.Client.editAdresa?id=0&client_id=" + client_id, function() {
+      var comboStrada = form.getCombo("strada");
+      comboStrada.enableFilteringMode(true, '@routes.Nomenclatura.comboStrada', true);
+    });
+    // var comboStrada = form.getCombo("strada");
+    // comboStrada.enableFilteringMode(true, '@routes.Nomenclatura.comboStrada', true);
+    w.setText("Adauga adresa noua!");
+    w.show();
+  }
+
+  //action adauga contract nou
+  function addNewContract(client_id) {
+    var w = dhxWin.window("w_ct");
+    var form = w.attachForm();
+    form.loadStruct("@routes.Client.editContract?id=0&id_client=" + client_id);
+    //save form data
+    form.attachEvent("onButtonClick", function(id) {
+      form.send("@routes.Client.saveContract", "post", function(loader, response) {
+        var result = JSON.parse(response)
+        dhtmlx.message({
+          text: result.mess
+        })
+        if(result.res == "OK") {
+          var grid = details_tabbar.cells("ct_tab").getAttachedObject();
+          if(typeof(window.dhtmlXGridObject) == "function" && grid instanceof dhtmlXGridObject) {
+            grid.clearAndLoad('@routes.Client.listGridContract?id_client=' + client_id, 'js')
+          }
+          w.hide()
+        }
+      });
+    });
+
+    w.setText("Adauga contract nou!");
+    w.show();
+  }
+
+  //action context menu contract - editare/stergere
+  function contextMenuContract(menuitemId, id_client) {
+    var grid = details_tabbar.cells("ct_tab").getAttachedObject();
+    var w = dhxWin.window("w_ct");
+    var data = grid.contextID.split("_"); //rowId_colInd
+    var id_contract = data[0];
+
+    if(menuitemId == "edit_contract") {
+      w.show();
+    }
+
+    if(menuitemId == "sterg_contact") {
+      dhtmlx.confirm({
+        title: "Sterge linia",
+        type: "confirm",
+        text: "Sunteti sigur ca doriti sa stergeti inregistrarea curenta?",
+        callback: function(){
+          window.dhx4.ajax.get("@routes.Client.disableContract?id=" + id_contract, function(r) {
+            var response = r.xmlDoc.responseText
+            grid.clearAndLoad('@routes.Client.listGridContract?id_client=' + id_client, 'js');
+            dhtmlx.message({
+              text: response
+            });
+          });
+        }
+
+      });
+    }
+
+    var form = w.attachForm();
+    form.loadStruct("@routes.Client.editContract?id=" + id_contract + "&id_client=" + id_client);
+    //save form data
+    form.attachEvent("onButtonClick", function(id) {
+      form.send("@routes.Client.saveContract", "post", function(loader, response) {
+        var result = JSON.parse(response)
+        dhtmlx.message({
+          text: result.mess
+        })
+        if(result.res == "OK") {
+          var grid = details_tabbar.cells("ct_tab").getAttachedObject();
+          if(typeof(window.dhtmlXGridObject) == "function" && grid instanceof dhtmlXGridObject) {
+            grid.clearAndLoad('@routes.Client.listGridContract?id_client=' + id_client, 'js')
+          }
+          w.hide()
+        }
+      });
+    });
+
+    w.setText("Adauga contract Nou!");
+  }
+  </script>
+</head>
+<body onload="doOnLoad();" onunload="doOnUnload();">
+</body>
+</html>

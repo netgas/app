@@ -1,0 +1,38 @@
+@(formular: play.api.data.Form[(String, String)])(implicit flash: play.api.mvc.Flash)
+@import helper._
+
+@main("Login") {
+	<h1>Logare</h1>
+	<fieldset>
+		<legend>Formular logare</legend>
+		@helper.form(action = routes.User.authentificate()) {           
+
+            @flash.get("success").map { message =>
+            <div id="flash_div" style="font-size: 14px; color: #3c763d; background-color: #dff0d8; padding: 15px;">
+                @message
+            </div>
+            }
+
+			@formular.globalError.map { error =>
+                <div class="alert alert-danger">
+                    @error.message
+                </div>
+            }
+            <label for="name">Username*</label>
+            <input type="text" id="name" name="name" value="@formular("name").value" placeholder="Numele utilizatorului">
+            @if(formular.error("name")){
+            	<span style="color: red;">@formular.error("name").get.message</span>
+        	}
+            <br>
+
+            <label for="password">Password*</label>
+            <input type="password" id="password" name="password" value="@formular("password").value" placeholder="Parola utilizatorului">
+            @if(formular.error("password")){
+            	<span style="color: red;">@formular.error("password").get.message</span>
+        	}
+            <br>
+
+            <button type="submit">Logare</button>
+		}
+	</fieldset>  
+}
