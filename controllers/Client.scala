@@ -58,12 +58,8 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 			"cod_client" -> nonEmptyText,
 			"email" -> nonEmptyText,
 			"telefon" -> nonEmptyText,
-<<<<<<< HEAD
 			//"tip" -> nonEmptyText
 			//"tip" -> nonEmpty2Text
-=======
-			"tip" -> nonEmptyText
->>>>>>> origin/master
 		)
 	}
 
