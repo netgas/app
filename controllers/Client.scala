@@ -60,7 +60,11 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 			"telefon" -> nonEmptyText,
 			//"tip" -> nonEmptyText
 			//"tip" -> nonEmpty2Text
+<<<<<<< HEAD
 			//"tip2" -> nonEmpty2Text
+=======
+			//"tip" -> nonEmpty3Text
+>>>>>>> origin/master
 		)
 	}
 
