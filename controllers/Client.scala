@@ -98,6 +98,25 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 			//"tip" -> nonEmpty3Text
 		)
 	}
+	
+	
+	//formular client nou
+	val clientForm = Form {
+		tuple(
+			"id_client" ->optional(number),
+			"nume" -> nonEmptyText,
+			"prenume" -> nonEmptyText,
+			"cod_client" -> nonEmptyText,
+			"email" -> nonEmptyText,
+			"telefon" -> nonEmptyText,
+			//"tip" -> nonEmptyText
+			//"tip" -> nonEmpty2Text
+			//"tip2" -> nonEmpty2Text
+			//"tip" -> nonEmpty3Text
+		)
+	}
+	
+	
 //comentariu test
 	//formular adresa noua
 	val adresaForm = Form {
@@ -139,8 +158,29 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 			)
 		)
 	}
+	
+	
+	//formular client nou
+	val clientForm = Form {
+		tuple(
+			"id_client" ->optional(number),
+			"nume" -> nonEmptyText,
+			"prenume" -> nonEmptyText,
+			"cod_client" -> nonEmptyText,
+			"email" -> nonEmptyText,
+			"telefon" -> nonEmptyText,
+			//"tip" -> nonEmptyText
+			//"tip" -> nonEmpty2Text
+			//"tip2" -> nonEmpty2Text
+			//"tip" -> nonEmpty3Text
+		)
+	}
+	
+	
 
 	//json write contract
+	//este un tezt
+	
 	implicit val contractWrites = new Writes[Contract] {
 		def writes(contract: Contract) = Json.obj(
 			"id" -> contract.id_contract,
@@ -175,6 +215,16 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 		Ok(Json.prettyPrint(datag))
 	}
 
+	
+	implicit val contractWrites = new Writes[Contract] {
+		def writes(contract: Contract) = Json.obj(
+			"id" -> contract.id_contract,
+			"numar" -> contract.numar,
+			"data" -> formatDateApp.format(contract.data)
+		)
+	}
+	
+	
 
 	//client data edit
 	def editclient = Action { implicit request=>
@@ -250,6 +300,20 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 						"value" -> "Salveaza",
 						"id"->"save_action"
 					)
+					
+					
+					
+					Json.obj(
+						"type" -> "select",
+						"label" -> "Tip",
+						"name" -> "tip",
+						"value" -> clDb.tip,
+						"options" -> Json.arr(
+											Json.obj("text"->"casnic", "value"->"casnic"),
+											Json.obj("text"->"noncasnic", "value"->"noncasnic")
+											)
+					),
+					
 		)
 
 		val form = Json.arr(
