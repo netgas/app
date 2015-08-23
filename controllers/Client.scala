@@ -49,6 +49,40 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 	//format data aplicatie
 	val formatDateApp = new java.text.SimpleDateFormat("dd-MM-yyyy")
 
+	//comentariu test
+	//formular adresa noua
+	val adresaForm = Form {
+		tuple(
+			"id_cadresa" -> optional(number),
+			"id_client" -> number,
+			"tip_adresa" -> nonEmptyText,
+			"strada_id" -> number,
+			"numar" -> optional(text),
+			"bl" -> optional(text),
+			"sc" -> optional(text),
+			"ap" -> optional(text),
+			"et" -> optional(text),
+			"observatii23" -> optional(text2)
+		)
+	}
+	
+	//comentariu test
+	//formular adresa noua
+	val adresaForm = Form {
+		tuple(
+			"id_cadresa" -> optional(number),
+			"id_client" -> number,
+			"tip_adresa" -> nonEmptyText,
+			"strada_id" -> number,
+			"numar" -> optional(text),
+			"bl" -> optional(text),
+			"sc" -> optional(text),
+			"ap" -> optional(text),
+			"et" -> optional(text),
+			"observatii23" -> optional(text2)
+		)
+	}
+	
 	//formular client nou
 	val clientForm = Form {
 		tuple(
