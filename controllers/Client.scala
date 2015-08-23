@@ -80,12 +80,12 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 			"sc" -> optional(text),
 			"ap" -> optional(text),
 			"et" -> optional(text),
-			"observatii" -> optional(text)
+			"observatii23" -> optional(text2)
 		)
 	}
 //cometariufgfdgfg
 	//formular contract nou
-	val contractForm = Form {
+	val contractForm = Form1 {
 		tuple(
 			"id_contract" -> optional(number),
 			"id_client" -> number,
