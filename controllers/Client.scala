@@ -83,7 +83,7 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 			"observatii" -> optional(text)
 		)
 	}
-
+//cometariufgfdgfg
 	//formular contract nou
 	val contractForm = Form {
 		tuple(
