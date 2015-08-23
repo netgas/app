@@ -82,7 +82,7 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 	}
 //cometariufgfdgfg
 	//formular contract nou
-	val contractForm = Form1 {
+	val contractForm = Form5 {
 		tuple(
 			"id_contract" -> optional(number),
 			"id_client" -> number,
