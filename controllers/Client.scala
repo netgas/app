@@ -87,7 +87,7 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 			"id_contract" -> optional(number),
 			"id_client" -> number,
 			"numar" -> nonEmptyText,
-			"data" -> nonEmptyText
+			"data1983" -> nonEmptyText
 		)
 	}
 
