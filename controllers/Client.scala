@@ -67,7 +67,7 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 >>>>>>> origin/master
 		)
 	}
-
+//comentariu test
 	//formular adresa noua
 	val adresaForm = Form {
 		tuple(
