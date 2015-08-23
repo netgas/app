@@ -63,7 +63,7 @@ object Client extends Controller with AuthenticationElement with AuthConfigImpl 
 			//"tip" -> nonEmpty3Text
 		)
 	}
-
+//comentariu test
 	//formular adresa noua
 	val adresaForm = Form {
 		tuple(
